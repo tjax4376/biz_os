@@ -20,6 +20,14 @@ sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "sqlite"] }
 libc = "0.2"
 nix = "0.27"
 
+# HTTP server for REST API
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors"] }
+
+# Diagnostic service (local path)
+diagnostic-service = { path = "../diagnostic-service" }
+
 # Learning engine (local path, will be workspace member later)
 # learning-engine = { path = "../learning-engine" }
 

@@ -9,9 +9,11 @@
 #include <stdint.h>
 
 /* System call numbers (to be defined in kernel) */
-#define __NR_ai_inference    400
-#define __NR_ai_learn        401
-#define __NR_ai_get_pattern  402
+#define __NR_ai_inference        400
+#define __NR_ai_learn            401
+#define __NR_ai_get_pattern      402
+#define __NR_sys_get_system_metrics  403
+#define __NR_sys_diagnose_system     404
 
 /* AI Inference System Call
  * model_id: Model identifier
@@ -59,6 +61,44 @@ long sys_ai_get_pattern(
 #define AI_PATTERN_COMMUNICATION      3
 #define AI_PATTERN_WORKFLOW           4
 #define AI_PATTERN_DECISION           5
+
+/* System Metrics Structure */
+struct sys_metrics {
+    unsigned long cpu_usage_percent;
+    unsigned long memory_total_kb;
+    unsigned long memory_free_kb;
+    unsigned long memory_used_kb;
+    unsigned long processes_count;
+    unsigned long network_rx_bytes;
+    unsigned long network_tx_bytes;
+    unsigned long disk_read_bytes;
+    unsigned long disk_write_bytes;
+    unsigned long timestamp;
+};
+
+/* Get System Metrics System Call
+ * metrics_buffer: Buffer to receive system metrics
+ * metrics_len: Pointer to buffer length (in/out)
+ * Returns: 0 on success, negative error code on failure
+ */
+long sys_get_system_metrics(
+    void *metrics_buffer,
+    size_t *metrics_len
+);
+
+/* Diagnose System System Call
+ * query: Natural language query string
+ * query_len: Length of query string
+ * response: Buffer for AI-generated diagnostic response
+ * response_len: Pointer to response buffer length (in/out)
+ * Returns: 0 on success, negative error code on failure
+ */
+long sys_diagnose_system(
+    const char *query,
+    size_t query_len,
+    char *response,
+    size_t *response_len
+);
 
 #endif /* BIZOS_SYSCALLS_H */
 

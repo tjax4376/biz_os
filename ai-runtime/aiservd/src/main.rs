@@ -13,6 +13,7 @@ mod inference;
 mod learning;
 
 use config::Config;
+use diagnostic_service::{DiagnosticAnalyzer, DiagnosticApi};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -52,6 +53,25 @@ async fn main() -> Result<()> {
     ).await?);
     info!("Learning engine initialized");
 
+    // Initialize diagnostic service
+    let diagnostic_analyzer = Arc::new(DiagnosticAnalyzer::new());
+    let diagnostic_api = DiagnosticApi::new(diagnostic_analyzer.clone());
+    info!("Diagnostic service initialized");
+
+    // Start HTTP server for diagnostic API
+    let api_handle = {
+        let router = diagnostic_api.router;
+        tokio::spawn(async move {
+            let listener = tokio::net::TcpListener::bind("0.0.0.0:8080")
+                .await
+                .expect("Failed to bind to port 8080");
+            info!("Diagnostic API listening on http://0.0.0.0:8080");
+            axum::serve(listener, router)
+                .await
+                .expect("HTTP server error");
+        })
+    };
+
     // Start services
     info!("Starting AI runtime services...");
 
@@ -64,7 +84,14 @@ async fn main() -> Result<()> {
     };
 
     // Run until shutdown
-    shutdown_signal.await;
+    tokio::select! {
+        _ = shutdown_signal => {
+            info!("Shutdown signal received");
+        }
+        _ = api_handle => {
+            info!("API server stopped");
+        }
+    }
 
     info!("Shutting down AI Service Daemon");
     Ok(())

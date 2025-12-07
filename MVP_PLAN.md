@@ -32,6 +32,8 @@ This approach:
   - GPU memory management enhancements
   - Real-time learning data collection hooks
   - Custom system calls for AI runtime
+  - **System monitoring hooks** for AI Task Manager (process, memory, CPU, network, I/O metrics)
+  - **Diagnostic system calls** for AI-powered system diagnostics
 
 **Why Linux base**:
 - Proven stability and hardware support
@@ -48,6 +50,7 @@ This approach:
 - **Pattern Recognition Engine**: Real-time pattern detection
 - **Learning Engine**: Continuous learning from user actions
 - **Inference Engine**: Fast AI model execution (GPU-accelerated)
+- **AI Diagnostic Service**: Natural language system diagnostics using Mistral LLM
 
 **Technologies**:
 - ONNX Runtime (cross-platform, GPU support)
@@ -85,6 +88,7 @@ This approach:
 **Core Applications** (MVP):
 - **Unified Inbox**: Email integration with AI sorting
 - **Task Manager**: Learned task automation
+- **AI Task Manager**: AI-powered system diagnostics and issue diagnosis (natural language queries)
 - **Document Hub**: Basic document management
 - **Workflow Builder**: Visual workflow from learned patterns
 
@@ -102,11 +106,14 @@ This approach:
 6. Create AI runtime daemon structure (Week 3-4) - **AI-generated**
 7. Integrate Mistral 7B quantized model (Week 4) - **Pre-downloaded**
 8. Basic system services (network, filesystem) (Week 4)
+9. **AI Task Manager**: Kernel-level system monitoring hooks (Week 3-4)
+10. **AI Task Manager**: System diagnostic syscalls and AI diagnostic service (Week 4)
 
 **Deliverables**:
 - Bootable VM image (x86_64 first, ARM64 parallel)
 - Basic AI runtime running
 - System can execute Mistral model locally
+- AI Task Manager with natural language diagnostic queries
 
 **Success Criteria**:
 - ✅ Boots in < 30 seconds
@@ -408,14 +415,38 @@ This approach:
 - Leverage existing libraries and tools
 - Incremental testing throughout
 
+## AI Task Manager Feature
+
+### Overview
+AI-powered system diagnostics tool that allows users to ask natural language questions about system health and receive AI-generated diagnoses and recommendations.
+
+### Architecture
+- **Kernel Layer**: System monitoring hooks collect real-time metrics (process, memory, CPU, network, I/O)
+- **System Calls**: New syscalls for querying system metrics (`sys_get_system_metrics`, `sys_diagnose_system`)
+- **AI Diagnostic Service**: Rust service that uses Mistral LLM to analyze metrics and answer queries
+- **REST API**: HTTP endpoint for natural language queries (`POST /api/v1/diagnose`)
+
+### Features
+- Natural language queries: "What's wrong with my system?", "Why is it slow?", "Which process is using the most memory?"
+- Real-time system metrics collection
+- AI-powered analysis using Mistral LLM
+- Actionable recommendations
+- Historical trend analysis (future enhancement)
+
+### Implementation
+- **Kernel**: System monitoring hooks in kernel/syscalls/
+- **Service**: ai-runtime/diagnostic-service/ module
+- **Integration**: Integrated with aiservd daemon
+
 ## Next Steps
 
 1. ✅ **Plan Approved**: All clarification questions answered
 2. **Set Up Development Environment**: VM, toolchains, repositories (Week 1)
 3. **Begin Phase 1**: Start kernel customization and Mistral AI runtime integration
-4. **Daily Progress**: Track daily with AI assistance
-5. **Weekly Reviews**: Adjust timeline based on progress
-6. **Iterate Rapidly**: Fast feedback loops, continuous integration
+4. **AI Task Manager**: Implement kernel hooks and diagnostic service (Week 3-4)
+5. **Daily Progress**: Track daily with AI assistance
+6. **Weekly Reviews**: Adjust timeline based on progress
+7. **Iterate Rapidly**: Fast feedback loops, continuous integration
 
 ## Clarification Answers (Confirmed)
 

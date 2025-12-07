@@ -69,6 +69,11 @@ BIZ_OS is a full operating system with AI at its core, designed to learn busines
 long sys_ai_inference(unsigned long model_id, void *input, void *output);
 long sys_ai_learn(void *data, size_t len, unsigned long pattern_type);
 long sys_ai_get_pattern(unsigned long pattern_id, void *buffer);
+
+// System diagnostic system calls
+long sys_get_system_metrics(void *metrics_buffer, size_t *metrics_len);
+long sys_diagnose_system(const char *query, size_t query_len, 
+                         char *response, size_t *response_len);
 ```
 
 #### Data Collection Hooks
@@ -171,6 +176,27 @@ Knowledge Graph ← Pattern Storage ← Pattern Validator
 - Clustering (for task groups)
 - Graph neural networks (for relationships)
 - Time series analysis (for temporal patterns)
+
+#### AI Diagnostic Service
+**Responsibilities**:
+- System metrics collection (kernel-level hooks)
+- Natural language query processing
+- AI-powered system diagnosis using Mistral LLM
+- Issue severity determination
+- Recommendation generation
+- REST API for diagnostic queries
+
+**Components**:
+- **Metrics Collector**: Gathers system metrics via kernel syscalls
+- **Diagnostic Analyzer**: Uses Mistral LLM to analyze metrics and answer queries
+- **REST API**: HTTP endpoint for natural language queries
+
+**System Calls**:
+- `sys_get_system_metrics`: Collects current system metrics
+- `sys_diagnose_system`: Requests AI-powered diagnosis (future)
+
+**API Endpoint**:
+- `POST /api/v1/diagnose`: Accepts natural language queries, returns diagnostic results
 
 ### Data Storage
 
@@ -369,6 +395,14 @@ Knowledge Graph ← Pattern Storage ← Pattern Validator
 - Pattern-based task suggestions
 - Automation execution
 - Task history and analytics
+
+#### AI Task Manager (System Diagnostics)
+- Natural language system diagnostics
+- Real-time system metrics collection (CPU, memory, processes, network, I/O)
+- AI-powered issue diagnosis using Mistral LLM
+- Actionable recommendations
+- REST API endpoint for queries (`POST /api/v1/diagnose`)
+- Kernel-level system monitoring hooks
 
 #### Document Hub
 - Document aggregation from all sources
