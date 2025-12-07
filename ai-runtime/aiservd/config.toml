@@ -1,0 +1,17 @@
+# BIZ_OS AI Service Daemon Configuration
+
+# Model directories
+model_dir = "/var/lib/bizos/models"
+cache_dir = "/var/cache/bizos/models"
+
+# Database paths
+pattern_db_path = "/var/lib/bizos/patterns/patterns.db"
+knowledge_graph_path = "/var/lib/bizos/knowledge/graph.db"
+
+# GPU settings
+gpu_enabled = true
+cpu_fallback = true
+
+# Logging
+log_level = "info"
+

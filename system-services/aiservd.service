@@ -1,0 +1,23 @@
+[Unit]
+Description=BIZ_OS AI Service Daemon
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/aiservd
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Environment
+Environment="BIZOS_CONFIG=/etc/bizos/aiservd.toml"
+Environment="RUST_LOG=info"
+
+# Security
+User=bizos
+Group=bizos
+
+[Install]
+WantedBy=multi-user.target
+

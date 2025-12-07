@@ -1,0 +1,32 @@
+[package]
+name = "aiservd"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.35", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Model management
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "sqlite"] }
+
+# System integration
+libc = "0.2"
+nix = "0.27"
+
+# Learning engine (local path, will be workspace member later)
+# learning-engine = { path = "../learning-engine" }
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+[[bin]]
+name = "aiservd"
+path = "src/main.rs"
+
