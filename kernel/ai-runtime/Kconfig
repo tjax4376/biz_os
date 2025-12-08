@@ -1,0 +1,108 @@
+# BIZ_OS Kernel AI Runtime Configuration
+
+menuconfig AI_RUNTIME
+    bool "BIZ_OS AI Runtime Support"
+    depends on X86_64 || ARM64
+    default y
+    help
+      Enable kernel-level AI runtime support for direct model access
+      using a decoupled request architecture.
+
+      This provides SPARC-like integration of AI capabilities directly
+      into the kernel, enabling high-performance AI inference without
+      userspace/kernel transitions.
+
+if AI_RUNTIME
+
+config AI_RUNTIME_DEBUG
+    bool "AI Runtime Debugging"
+    default n
+    help
+      Enable debugging support for AI runtime. This adds additional
+      logging and debugging information at the cost of performance.
+
+config AI_RUNTIME_MAX_WORKERS
+    int "Maximum AI Worker Threads"
+    default 8
+    range 1 64
+    help
+      Maximum number of AI worker threads that can process requests.
+      More threads allow higher parallelism but consume more resources.
+
+config AI_RUNTIME_MAX_PENDING
+    int "Maximum Pending Requests"
+    default 10000
+    range 100 100000
+    help
+      Maximum number of pending AI requests in the queue.
+      Higher values allow more requests but consume more memory.
+
+config AI_RUNTIME_MAX_BATCH_SIZE
+    int "Maximum Batch Size"
+    default 32
+    range 1 256
+    help
+      Maximum number of requests that can be batched together
+      for processing. Larger batches improve throughput but
+      increase latency.
+
+config AI_RUNTIME_GPU
+    bool "GPU Acceleration Support"
+    default y
+    help
+      Enable GPU acceleration for AI inference. This requires
+      GPU drivers and hardware support.
+
+if AI_RUNTIME_GPU
+
+config AI_RUNTIME_CUDA
+    bool "NVIDIA CUDA Support"
+    depends on DRM && PCI
+    default y
+    help
+      Enable NVIDIA CUDA support for GPU acceleration.
+      Requires NVIDIA GPU and kernel driver.
+
+config AI_RUNTIME_OPENCL
+    bool "OpenCL Support"
+    depends on DRM
+    default y
+    help
+      Enable OpenCL support for multi-vendor GPU acceleration.
+      Supports AMD, Intel, and other OpenCL-compatible GPUs.
+
+config AI_RUNTIME_UNIFIED_MEMORY
+    bool "Unified Memory Support"
+    depends on AI_RUNTIME_CUDA || AI_RUNTIME_OPENCL
+    default y
+    help
+      Enable unified memory support for efficient CPU/GPU
+      memory sharing. Reduces memory copies and improves
+      performance.
+
+endif # AI_RUNTIME_GPU
+
+config AI_RUNTIME_CACHE
+    bool "Result Caching"
+    default y
+    help
+      Enable caching of AI inference results. Reduces redundant
+      computation but consumes additional memory.
+
+config AI_RUNTIME_CACHE_SIZE
+    int "Cache Size (MB)"
+    depends on AI_RUNTIME_CACHE
+    default 256
+    range 16 4096
+    help
+      Maximum size of the result cache in megabytes.
+
+config AI_RUNTIME_SECURITY
+    bool "Security and Access Control"
+    default y
+    help
+      Enable security features including request validation,
+      access control, and audit logging.
+
+endif # AI_RUNTIME
+
