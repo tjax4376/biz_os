@@ -59,11 +59,35 @@ EOF
     echo "✓ README created"
 fi
 
+# Check for Docker
+echo ""
+echo "Checking for Docker..."
+if command -v docker >/dev/null 2>&1; then
+    echo "✓ Docker found"
+    if command -v docker-compose >/dev/null 2>&1 || docker compose version >/dev/null 2>&1; then
+        echo "✓ Docker Compose found"
+        echo ""
+        echo "Docker-based development environment is available!"
+        echo "To use Docker:"
+        echo "  1. Build image: ./scripts/docker-build.sh"
+        echo "  2. Start container: ./scripts/docker-run.sh"
+        echo "  3. Or use: docker-compose up -d"
+        echo ""
+    else
+        echo "Warning: Docker Compose not found. Install Docker Desktop for macOS."
+    fi
+else
+    echo "Warning: Docker not found. Install Docker Desktop for macOS: https://www.docker.com/products/docker-desktop"
+    echo ""
+    echo "Alternative: Use VM-based development (see QUICK_START.md)"
+fi
+
 echo ""
 echo "Development environment setup complete!"
 echo ""
 echo "Next steps:"
-echo "1. Set up VM (see QUICK_START.md)"
-echo "2. Configure kernel build environment"
-echo "3. Begin Phase 1 development"
+echo "1. Use Docker (recommended): ./scripts/docker-build.sh && ./scripts/docker-run.sh"
+echo "2. Or set up VM (see QUICK_START.md)"
+echo "3. Configure kernel build environment"
+echo "4. Begin Phase 1 development"
 

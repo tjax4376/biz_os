@@ -1,0 +1,66 @@
+# BIZ_OS Docker Compose Configuration
+# Development environment with volume mounts and networking
+#
+# Version: 1.0
+# Author: BIZ_OS Development Team
+# Timestamp: 2025-01-27
+# Change Rationale: Containerized development environment for macOS
+
+version: '3.8'
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bizos-dev
+    image: bizos-dev:latest
+    volumes:
+      # Mount project root
+      - .:/workspace
+      # Persist Rust cargo cache
+      - cargo-cache:/home/developer/.cargo/registry
+      - cargo-git:/home/developer/.cargo/git
+      # Persist Python packages (optional, can be regenerated)
+      - python-cache:/home/developer/.cache/pip
+      # Persist Node.js modules (optional)
+      - node-modules:/workspace/node_modules
+      # Kernel build artifacts (large, persist for faster rebuilds)
+      - kernel-build:/workspace/kernel/linux
+    ports:
+      # AI Runtime REST API
+      - "8080:8080"
+      # UI Framework dev server
+      - "3000:3000"
+      # Python services (using 5001 instead of 5000 to avoid macOS AirPlay Receiver conflict)
+      - "5001:5000"
+    environment:
+      - RUST_BACKTRACE=1
+      - CARGO_TARGET_DIR=/workspace/target
+      - PYTHONUNBUFFERED=1
+      - TERM=xterm-256color
+    stdin_open: true
+    tty: true
+    # Keep container running
+    command: /bin/bash
+    # Resource limits (adjust based on your Mac's capabilities)
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
+
+volumes:
+  cargo-cache:
+    driver: local
+  cargo-git:
+    driver: local
+  python-cache:
+    driver: local
+  node-modules:
+    driver: local
+  kernel-build:
+    driver: local

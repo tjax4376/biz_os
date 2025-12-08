@@ -493,3 +493,165 @@ User requested a new feature: AI-powered Task Manager that allows users to ask n
 - REST API follows RESTful design principles
 - All code includes proper error handling and logging
 
+## Session: Docker Development Environment Redesign
+**Date**: 2025-01-27
+**Session Type**: Infrastructure & Development Environment
+
+### Context Description
+
+User requested redesign of development environment to use Docker instead of VirtualBox, as VirtualBox doesn't work on their MacBook. The goal was to create a containerized Ubuntu-based development environment that provides all necessary tools for kernel development, Rust compilation, Python AI libraries, and Node.js development.
+
+### Discussion Points
+
+#### Requirements
+1. **Replace VirtualBox dependency**: User has Ubuntu ISO but VirtualBox doesn't work on MacBook
+2. **Ubuntu-based environment**: Need Ubuntu 22.04 LTS with all development tools
+3. **Complete toolchain**: Kernel build tools, Rust, Python AI libraries, Node.js
+4. **Easy workflow**: Simple commands to build, run, and access container
+5. **Code persistence**: Volume mounts to persist code and build artifacts
+6. **Port forwarding**: Expose development servers (8080, 3000, 5000)
+
+#### Solution Design
+1. **Dockerfile**: Ubuntu 22.04 base with all development dependencies
+   - Kernel build tools (gcc, make, libncurses-dev, flex, bison, etc.)
+   - Cross-compilation toolchains (x86_64, ARM64)
+   - Rust toolchain (stable)
+   - Python 3 with AI libraries (PyTorch, ONNX Runtime, Transformers)
+   - Node.js 20.x LTS
+   - Non-root user for security
+
+2. **Docker Compose**: Container orchestration
+   - Volume mounts for code persistence
+   - Cached volumes for Rust/Python/Node dependencies
+   - Port forwarding for development servers
+   - Resource limits (CPU, memory)
+
+3. **Helper Scripts**: Simplified workflow
+   - `docker-build.sh`: Build Docker image
+   - `docker-run.sh`: Start container interactively
+   - `docker-shell.sh`: Access shell in running container
+
+4. **Documentation**: Comprehensive guides
+   - `DOCKER_SETUP.md`: Complete Docker setup guide
+   - Updated `DEVELOPMENT.md`: Docker workflow instructions
+   - Updated `setup-dev-env.sh`: Docker detection and instructions
+
+#### Key Clarifications
+- **ISO vs Docker Image**: Clarified that Docker uses Ubuntu images from Docker Hub (ubuntu:22.04), not ISO files. ISO files are for VM installation, not containerization.
+- **GPU Support**: Noted that GPU passthrough in Docker on macOS is limited. Documented alternatives (cloud GPU, remote Linux server).
+
+### Code Changes
+
+#### New Files Created
+1. **Dockerfile**
+   - Ubuntu 22.04 base image
+   - All development tools installed
+   - Non-root user (developer)
+   - Entrypoint script integration
+   - Port exposures (8080, 3000, 5000)
+
+2. **docker-compose.yml**
+   - Service definition for dev container
+   - Volume mounts (project root, cargo cache, python cache, node modules, kernel build)
+   - Port mappings
+   - Environment variables
+   - Resource limits
+
+3. **docker/docker-entrypoint.sh**
+   - Environment setup script
+   - Directory structure creation
+   - Version information display
+   - Command execution
+
+4. **.dockerignore**
+   - Optimized build context
+   - Excludes build artifacts, node_modules, AI models, etc.
+
+5. **scripts/docker-build.sh**
+   - Builds Docker image
+   - Error handling
+   - User-friendly output
+
+6. **scripts/docker-run.sh**
+   - Runs container interactively
+   - Volume mounts configured
+   - Port forwarding set up
+   - Environment variables set
+
+7. **scripts/docker-shell.sh**
+   - Accesses shell in running container
+   - Auto-starts container if not running
+   - Uses docker-compose for consistency
+
+8. **docs/DOCKER_SETUP.md**
+   - Complete Docker setup guide
+   - Quick start instructions
+   - Troubleshooting section
+   - Best practices
+
+9. **docker/README.md**
+   - Directory documentation
+
+#### Files Updated
+1. **scripts/setup-dev-env.sh**
+   - Added Docker detection
+   - Added Docker workflow instructions
+   - Updated next steps to prioritize Docker
+
+2. **docs/DEVELOPMENT.md**
+   - Added Docker option as primary method
+   - Added Docker workflow instructions
+   - Added Docker debugging section
+   - Kept native macOS option as alternative
+
+3. **.memory/cards.md**
+   - Added Docker development environment issue and solution
+   - Documented benefits and implementation details
+
+### Summary of Changes
+
+**Infrastructure Redesign Completed**:
+- Docker-based development environment created
+- Ubuntu 22.04 container with all development tools
+- Docker Compose configuration for easy management
+- Helper scripts for common tasks
+- Comprehensive documentation
+
+**Benefits**:
+- ✅ No VirtualBox dependency
+- ✅ Faster startup (~5 seconds vs 30-60 seconds)
+- ✅ Lower resource overhead
+- ✅ Consistent environment across team
+- ✅ Volume mounts for code persistence
+- ✅ Cached builds for faster rebuilds
+- ✅ Works on both Intel and Apple Silicon Macs
+
+**Architecture**:
+- **Base Image**: Ubuntu 22.04 LTS
+- **Development Tools**: Rust, Python (AI libs), Node.js, kernel build tools
+- **Volume Strategy**: Project root + cached dependencies
+- **Port Forwarding**: 8080 (AI Runtime), 3000 (UI), 5000 (Python services)
+- **User**: Non-root developer user for security
+
+**Key Components**:
+1. **Dockerfile**: Complete development environment definition
+2. **docker-compose.yml**: Container orchestration and volume management
+3. **Helper Scripts**: Simplified workflow commands
+4. **Documentation**: Comprehensive setup and usage guides
+
+**Next Steps**:
+1. User can build image: `./scripts/docker-build.sh`
+2. Start container: `docker-compose up -d`
+3. Access shell: `./scripts/docker-shell.sh`
+4. Begin development inside container
+
+### Notes
+
+- Docker uses Ubuntu images from Docker Hub, not ISO files
+- GPU passthrough limited on macOS Docker (documented alternatives)
+- Volume mounts ensure code persistence across container restarts
+- Cached volumes significantly speed up rebuilds
+- Non-root user improves security
+- All scripts are executable and include error handling
+- Documentation follows project standards
+

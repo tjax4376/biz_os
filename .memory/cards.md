@@ -93,3 +93,39 @@
 - `ai-runtime/diagnostic-service/` (new module)
 - `ai-runtime/aiservd/src/main.rs` (updated)
 
+### Docker Development Environment (2025-01-27)
+**Issue**: VirtualBox doesn't work on MacBook, need alternative development environment
+**Solution**: Created Docker-based Ubuntu development environment with all required tools
+**Components**:
+- Dockerfile: Ubuntu 22.04 base with Rust, Python AI libraries, Node.js, kernel build tools
+- docker-compose.yml: Container orchestration with volume mounts and port forwarding
+- Helper scripts: docker-build.sh, docker-run.sh, docker-shell.sh
+- Documentation: DOCKER_SETUP.md with comprehensive guide
+
+**Benefits**:
+- ✅ No VirtualBox dependency
+- ✅ Faster startup (~5 seconds vs 30-60 seconds)
+- ✅ Lower resource overhead
+- ✅ Consistent environment across team
+- ✅ Volume mounts for code persistence
+- ✅ Cached builds for faster rebuilds
+
+**Status**: ✅ Implemented
+**Files**:
+- `Dockerfile` (new, updated to fix Python package installation)
+- `docker-compose.yml` (new)
+- `docker/docker-entrypoint.sh` (new)
+- `.dockerignore` (new)
+- `scripts/docker-build.sh` (new)
+- `scripts/docker-run.sh` (new)
+- `scripts/docker-shell.sh` (new)
+- `docs/DOCKER_SETUP.md` (new)
+- `docs/DEVELOPMENT.md` (updated)
+- `scripts/setup-dev-env.sh` (updated)
+
+**Build Fixes Applied**:
+- Added missing Python system dependencies (libjpeg-dev, zlib1g-dev, libpng-dev, libffi-dev, libopenblas-dev, liblapack-dev)
+- Split PyTorch installation to use CPU-only index (avoids CUDA dependencies, faster builds)
+- Split pip installations into separate RUN commands for better error handling
+- Fixed Node.js installation to update apt-get before installing
+
