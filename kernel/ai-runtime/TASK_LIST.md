@@ -3,37 +3,37 @@
 ## Phase 1: AI Request Queue Infrastructure (Weeks 1-2)
 
 ### Task 1.1: Define Core Data Structures
-- [ ] Create `kernel/ai-runtime/ai_request.h`
-- [ ] Define `struct ai_request`
-- [ ] Define `struct ai_model_info`
-- [ ] Define `struct ai_request_queue`
-- [ ] Define priority levels and flags
-- [ ] Add kernel documentation
+- [x] Create `kernel/ai-runtime/ai_request.h`
+- [x] Define `struct ai_request`
+- [x] Define `struct ai_model_info`
+- [x] Define `struct ai_request_queue`
+- [x] Define priority levels and flags
+- [x] Add kernel documentation
 
 ### Task 1.2: Implement Request Queue
-- [ ] Create `kernel/ai-runtime/ai_queue.c`
-- [ ] Implement `ai_queue_init()`
-- [ ] Implement `ai_request_alloc()`
-- [ ] Implement `ai_request_enqueue()`
-- [ ] Implement `ai_request_dequeue()`
-- [ ] Implement priority-based queuing
-- [ ] Implement `ai_request_find()`
-- [ ] Add locking and reference counting
+- [x] Create `kernel/ai-runtime/ai_queue.c`
+- [x] Implement `ai_queue_init()`
+- [x] Implement `ai_request_alloc()`
+- [x] Implement `ai_request_enqueue()`
+- [x] Implement `ai_request_dequeue()`
+- [x] Implement priority-based queuing
+- [x] Implement `ai_request_find()`
+- [x] Add locking and reference counting
 
 ### Task 1.3: Create Kernel Workqueue
-- [ ] Create `kernel/ai-runtime/ai_workqueue.c`
-- [ ] Create dedicated workqueue `ai_wq`
-- [ ] Configure workqueue attributes
-- [ ] Implement work item structure
-- [ ] Integrate with request queue
+- [x] Create `kernel/ai-runtime/ai_workqueue.c`
+- [x] Create dedicated workqueue `ai_wq`
+- [x] Configure workqueue attributes
+- [x] Implement work item structure
+- [x] Integrate with request queue
 
 ### Task 1.4: Extend System Calls
-- [ ] Update `kernel/syscalls/ai_syscalls.c`
-- [ ] Implement `sys_ai_inference()` (sync)
-- [ ] Implement `sys_ai_inference_async()` (async)
-- [ ] Implement `sys_ai_get_result()`
-- [ ] Implement `sys_ai_cancel_request()`
-- [ ] Add input validation and error handling
+- [x] Update `kernel/syscalls/ai_syscalls.c`
+- [x] Implement `sys_ai_inference()` (sync)
+- [x] Implement `sys_ai_inference_async()` (async)
+- [x] Implement `sys_ai_get_result()`
+- [x] Implement `sys_ai_cancel_request()`
+- [x] Add input validation and error handling
 
 ## Phase 2: AI Worker Thread Pool (Weeks 2-3)
 
