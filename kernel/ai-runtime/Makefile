@@ -13,6 +13,7 @@ ai-runtime-objs := \
     ai_model_loader.o \
     ai_gpu.o \
     ai_inference.o \
+    ../sched/ai_sched.o \
     ai_batch.o \
     ai_cache.o \
     ai_perf.o \

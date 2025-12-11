@@ -22,6 +22,7 @@ BIZ_OS is a full AI-powered operating system designed to learn business practice
 
 ### Planning Documents
 - **README.md** (this file) - Project overview and quick start
+- **BUILD_INSTRUCTIONS.md** - Complete guide for downloading and compiling BIZ_OS using Docker
 - **REQUIREMENTS.md** - Complete requirements specification based on 20 answered questions
 - **MVP_PLAN.md** - Detailed 6-phase development plan with timeline
 - **ARCHITECTURE.md** - Complete technical architecture and design
@@ -132,7 +133,9 @@ MVP will be considered successful when:
    - Local LLM preference
 
 3. **Set Up Development Environment**:
-   - VM software (Parallels Desktop or VMware Fusion)
+   - Follow **BUILD_INSTRUCTIONS.md** for complete setup guide
+   - Docker-based development environment (recommended)
+   - Or VM software (Parallels Desktop or VMware Fusion)
    - Cross-compilation toolchains
    - Development repositories
    - AI model resources
@@ -192,6 +195,7 @@ Hardware Layer (VM: CPU, RAM, GPU, Storage)
 
 ## Resources
 
+- **Build Instructions**: See BUILD_INSTRUCTIONS.md for downloading and compiling BIZ_OS
 - **Research**: See RESEARCH.md for detailed feasibility research
 - **Requirements**: See REQUIREMENTS.md for complete specification
 - **Planning**: See MVP_PLAN.md for development roadmap

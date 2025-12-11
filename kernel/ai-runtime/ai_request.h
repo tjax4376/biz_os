@@ -19,6 +19,13 @@
 #include <linux/completion.h>
 #include <linux/ktime.h>
 #include <linux/refcount.h>
+#include <linux/cpumask.h>
+#include <linux/uidgid.h>
+
+/* Forward declarations */
+struct ai_worker;
+struct task_struct;
+struct cpumask;
 
 /**
  * @defgroup ai_priority Request Priority Levels
@@ -136,7 +143,7 @@ struct ai_model_info {
     void *weights;          /**< Pointer to model weights (kernel memory) */
     u64 weights_size;       /**< Size of weights */
     void *gpu_memory;       /**< GPU memory pointer (if loaded on GPU) */
-    u32 refcount;           /**< Reference count */
+    atomic_t refcount;      /**< Reference count */
     ktime_t load_time;      /**< When model was loaded */
     struct list_head list;   /**< List linkage */
 };
@@ -239,6 +246,10 @@ struct ai_request {
     /* Statistics */
     u32 retry_count;       /**< Number of retries */
     u32 batch_index;       /**< Index in batch */
+    
+    /* Security */
+    kuid_t user_id;        /**< User ID of request creator */
+    kgid_t group_id;       /**< Group ID of request creator */
 };
 
 /**
@@ -494,8 +505,213 @@ struct ai_model_info *ai_model_find(struct ai_model_registry *registry, u32 mode
  *
  * Removes a model from the registry. The model must not be
  * in use by any requests. Thread-safe operation.
+ *
+ * Return: 0 on success, negative error code on failure
  */
-void ai_model_unregister(struct ai_model_registry *registry, u32 model_id);
+int ai_model_unregister(struct ai_model_registry *registry, u32 model_id);
+
+/**
+ * ai_model_alloc - Allocate a new model info structure
+ * @gfp_flags: GFP flags for memory allocation
+ *
+ * Allocates and initializes a new model info structure.
+ *
+ * Return: Pointer to allocated model, or NULL on failure
+ */
+struct ai_model_info *ai_model_alloc(gfp_t gfp_flags);
+
+/**
+ * ai_model_free - Free a model info structure
+ * @model: Model to free
+ *
+ * Frees a model structure. The model must not be registered.
+ */
+void ai_model_free(struct ai_model_info *model);
+
+/**
+ * ai_model_get - Get a reference to a model
+ * @model: Model to get reference for
+ *
+ * Increments the reference count for a model.
+ *
+ * Return: Pointer to model
+ */
+struct ai_model_info *ai_model_get(struct ai_model_info *model);
+
+/**
+ * ai_model_put - Release a reference to a model
+ * @model: Model to release reference for
+ *
+ * Decrements the reference count for a model.
+ *
+ * Return: true if refcount reached zero, false otherwise
+ */
+bool ai_model_put(struct ai_model_info *model);
+
+/**
+ * ai_model_find_by_name_version - Find a model by name and version
+ * @registry: Registry to search
+ * @name: Model name to find
+ * @version: Model version (0 for any version)
+ *
+ * Looks up a model in the registry by name and version.
+ *
+ * Return: Pointer to model info, or NULL if not found
+ */
+struct ai_model_info *ai_model_find_by_name_version(struct ai_model_registry *registry,
+						     const char *name, u32 version);
+
+/**
+ * ai_model_get_count - Get number of registered models
+ * @registry: Registry to query
+ *
+ * Returns the current number of models registered in the registry.
+ *
+ * Return: Number of registered models
+ */
+u32 ai_model_get_count(struct ai_model_registry *registry);
+
+/**
+ * ai_model_memory_init - Initialize model memory management
+ *
+ * Initializes the model memory management subsystem.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_model_memory_init(void);
+
+/**
+ * ai_model_memory_destroy - Destroy model memory management
+ *
+ * Cleans up model memory management.
+ */
+void ai_model_memory_destroy(void);
+
+/**
+ * ai_model_alloc_memory - Allocate memory for model weights
+ * @model: Model to allocate memory for
+ * @size: Size in bytes to allocate
+ * @flags: Allocation flags (AI_MODEL_MEM_*)
+ * @numa_node: NUMA node (-1 for any node)
+ *
+ * Allocates kernel memory for model weights.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_model_alloc_memory(struct ai_model_info *model, u64 size, u32 flags, int numa_node);
+
+/**
+ * ai_model_free_memory - Free memory allocated for model weights
+ * @model: Model to free memory for
+ *
+ * Frees kernel memory allocated for model weights.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_model_free_memory(struct ai_model_info *model);
+
+/**
+ * ai_model_memory_get_stats - Get memory statistics
+ * @total_allocated: Pointer to store total allocated bytes
+ * @total_freed: Pointer to store total freed bytes
+ * @current_usage: Pointer to store current usage
+ * @peak_usage: Pointer to store peak usage
+ * @allocation_count: Pointer to store allocation count
+ *
+ * Retrieves memory statistics for model memory management.
+ */
+void ai_model_memory_get_stats(u64 *total_allocated, u64 *total_freed,
+			       u64 *current_usage, u64 *peak_usage,
+			       u64 *allocation_count);
+
+/**
+ * ai_model_memory_set_limit - Set memory limit for models
+ * @limit: Memory limit in bytes (0 = unlimited)
+ *
+ * Sets the maximum amount of memory that can be allocated for models.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_model_memory_set_limit(u64 limit);
+
+/**
+ * ai_model_memory_get_limit - Get memory limit
+ *
+ * Returns the current memory limit for models.
+ *
+ * Return: Memory limit in bytes (0 = unlimited)
+ */
+u64 ai_model_memory_get_limit(void);
+
+/**
+ * ai_model_loader_load_from_buffer - Load model from memory buffer
+ * @model: Model structure to populate
+ * @data: Model data buffer
+ * @size: Buffer size
+ *
+ * Loads and parses a model from a memory buffer.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_model_loader_load_from_buffer(struct ai_model_info *model,
+				     const void *data, size_t size);
+
+/**
+ * ai_model_loader_validate_model - Validate a loaded model
+ * @model: Model to validate
+ *
+ * Validates that a model structure is properly initialized.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_model_loader_validate_model(struct ai_model_info *model);
+
+/**
+ * ai_model_hotswap_init - Initialize hot-swapping subsystem
+ *
+ * Initializes the hot-swapping statistics and subsystem.
+ *
+ * Return: 0 on success
+ */
+int ai_model_hotswap_init(void);
+
+/**
+ * ai_model_drain_requests - Drain requests for a model
+ * @registry: Model registry
+ * @model_id: Model ID to drain requests for
+ * @timeout_ms: Timeout in milliseconds (0 = wait indefinitely)
+ *
+ * Waits for all pending requests for a model to complete.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_model_drain_requests(struct ai_model_registry *registry, u32 model_id,
+			     unsigned long timeout_ms);
+
+/**
+ * ai_model_hotswap - Perform hot-swap of a model
+ * @registry: Model registry
+ * @old_model_id: Old model ID to replace
+ * @new_model: New model to swap in
+ *
+ * Performs an atomic hot-swap of a model.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_model_hotswap(struct ai_model_registry *registry, u32 old_model_id,
+		      struct ai_model_info *new_model);
+
+/**
+ * ai_model_hotswap_get_stats - Get hot-swap statistics
+ * @swap_count: Pointer to store total swap count
+ * @swap_success: Pointer to store successful swaps
+ * @swap_failed: Pointer to store failed swaps
+ * @requests_drained: Pointer to store requests drained count
+ *
+ * Retrieves hot-swap statistics.
+ */
+void ai_model_hotswap_get_stats(u64 *swap_count, u64 *swap_success,
+				 u64 *swap_failed, u64 *requests_drained);
 
 /**
  * ai_model_load - Load model weights from filesystem
@@ -598,6 +814,590 @@ int ai_request_cancel(u64 request_id);
  * Called by worker threads after processing completes.
  */
 void ai_request_complete(struct ai_request *req, int error_code);
+
+/** @} */
+
+/**
+ * @defgroup ai_worker_functions Worker Thread Functions
+ * @brief Functions for managing AI worker threads
+ * @{
+ */
+
+/**
+ * ai_worker_create - Create a new worker thread
+ * @queue: Request queue to process from
+ * @cpu_id: CPU ID for affinity (-1 for any CPU)
+ * @name: Thread name (optional, NULL for default)
+ *
+ * Creates a new worker thread that will process requests from the queue.
+ *
+ * Return: Pointer to worker structure, or ERR_PTR on error
+ */
+struct ai_worker *ai_worker_create(struct ai_request_queue *queue,
+				    int cpu_id,
+				    const char *name);
+
+/**
+ * ai_worker_destroy - Destroy a worker thread
+ * @worker: Worker to destroy
+ *
+ * Stops the worker thread and frees all associated resources.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_worker_destroy(struct ai_worker *worker);
+
+/**
+ * ai_worker_pool_init - Initialize worker thread pool
+ * @queue: Request queue for workers
+ * @num_workers: Number of workers to create (0 for default)
+ *
+ * Creates a pool of worker threads to process AI requests.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_worker_pool_init(struct ai_request_queue *queue, int num_workers);
+
+/**
+ * ai_worker_pool_destroy - Destroy worker thread pool
+ *
+ * Destroys all workers in the pool and cleans up resources.
+ */
+void ai_worker_pool_destroy(void);
+
+/**
+ * ai_worker_get_stats - Get statistics for a worker
+ * @worker: Worker to get statistics from
+ * @requests_processed: Pointer to store processed count
+ * @requests_failed: Pointer to store failed count
+ * @avg_processing_time_ns: Pointer to store average processing time
+ * @current_load: Pointer to store current load (0-100)
+ *
+ * Retrieves statistics from a worker thread.
+ */
+void ai_worker_get_stats(struct ai_worker *worker,
+			 u64 *requests_processed,
+			 u64 *requests_failed,
+			 u64 *avg_processing_time_ns,
+			 u32 *current_load);
+
+/**
+ * ai_worker_get_count - Get number of active workers
+ *
+ * Return: Number of active workers
+ */
+int ai_worker_get_count(void);
+
+/**
+ * ai_worker_find_least_loaded - Find the least-loaded worker
+ * @queue: Request queue (for validation)
+ *
+ * Finds the worker with the lowest load balance score.
+ *
+ * Return: Pointer to least-loaded worker, or NULL if none available
+ */
+struct ai_worker *ai_worker_find_least_loaded(struct ai_request_queue *queue);
+
+/**
+ * ai_worker_should_process - Check if worker should process a request
+ * @worker: Worker to check
+ * @queue: Request queue
+ *
+ * Determines if this worker should process the next request based on load balancing.
+ *
+ * Return: true if worker should process, false otherwise
+ */
+bool ai_worker_should_process(struct ai_worker *worker, struct ai_request_queue *queue);
+
+/**
+ * ai_worker_get_load_balance_stats - Get load balancing statistics
+ * @decisions: Pointer to store number of load balancing decisions
+ * @routed_to_least_loaded: Pointer to store requests routed to least-loaded worker
+ * @imbalance_detected: Pointer to store number of times imbalance was detected
+ *
+ * Retrieves load balancing statistics from the worker pool.
+ */
+void ai_worker_get_load_balance_stats(u64 *decisions,
+				      u64 *routed_to_least_loaded,
+				      u64 *imbalance_detected);
+
+/** @} */
+
+/**
+ * @defgroup ai_completion_functions Completion Functions
+ * @brief Functions for managing request completion
+ * @{
+ */
+
+/**
+ * ai_completion_init - Initialize completion for a request
+ * @req: Request to initialize completion for
+ * @is_async: Whether this is an async request
+ *
+ * Initializes the appropriate completion mechanism based on request type.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_completion_init(struct ai_request *req, bool is_async);
+
+/**
+ * ai_completion_cleanup - Cleanup completion for a request
+ * @req: Request to cleanup completion for
+ *
+ * Cleans up completion resources.
+ */
+void ai_completion_cleanup(struct ai_request *req);
+
+/**
+ * ai_completion_notify - Notify completion of a request
+ * @req: Request that completed
+ * @error_code: Error code (0 for success)
+ *
+ * Notifies waiting threads or processes that a request has completed.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_completion_notify(struct ai_request *req, int error_code);
+
+/**
+ * ai_completion_wait - Wait for request completion (sync)
+ * @req: Request to wait for
+ * @timeout_ms: Timeout in milliseconds (0 = wait indefinitely)
+ *
+ * Waits for a synchronous request to complete.
+ *
+ * Return: 0 on success, negative error code on timeout or failure
+ */
+int ai_completion_wait(struct ai_request *req, unsigned long timeout_ms);
+
+/**
+ * ai_completion_get_result_fd - Get eventfd file descriptor for async request
+ * @req: Async request
+ *
+ * Returns the eventfd file descriptor for async request completion.
+ *
+ * Return: File descriptor on success, negative error code on failure
+ */
+int ai_completion_get_result_fd(struct ai_request *req);
+
+/**
+ * ai_completion_read_result - Read result from eventfd
+ * @fd: Eventfd file descriptor
+ * @error_code: Pointer to store error code
+ *
+ * Reads the completion value from eventfd.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_completion_read_result(int fd, int *error_code);
+
+/**
+ * ai_completion_set_timeout - Set timeout for a request
+ * @req: Request to set timeout for
+ * @timeout_ms: Timeout in milliseconds
+ *
+ * Sets up a timer that will timeout the request if not completed in time.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_completion_set_timeout(struct ai_request *req, unsigned long timeout_ms);
+
+/**
+ * ai_completion_get_stats - Get completion statistics
+ * @sync_completions: Pointer to store sync completion count
+ * @async_completions: Pointer to store async completion count
+ * @timeout_completions: Pointer to store timeout count
+ * @callback_completions: Pointer to store callback count
+ * @errors: Pointer to store error count
+ *
+ * Retrieves completion statistics.
+ */
+void ai_completion_get_stats(u64 *sync_completions,
+			     u64 *async_completions,
+			     u64 *timeout_completions,
+			     u64 *callback_completions,
+			     u64 *errors);
+
+/**
+ * ai_completion_init_module - Initialize completion module
+ *
+ * Initializes completion statistics and module state.
+ *
+ * Return: 0 on success
+ */
+int ai_completion_init_module(void);
+
+/** @} */
+
+/**
+ * @defgroup ai_gpu_functions GPU Functions
+ * @brief Functions for GPU/accelerator integration
+ * @{
+ */
+
+/* Forward declaration */
+struct ai_gpu_device;
+
+/**
+ * ai_gpu_init - Initialize GPU subsystem
+ *
+ * Initializes the GPU abstraction layer.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_gpu_init(void);
+
+/**
+ * ai_gpu_destroy - Destroy GPU subsystem
+ *
+ * Cleans up the GPU abstraction layer.
+ */
+void ai_gpu_destroy(void);
+
+/**
+ * ai_gpu_register_device - Register a GPU device
+ * @type: GPU type (CUDA, OpenCL, etc.)
+ * @name: Device name
+ * @total_memory: Total GPU memory in bytes
+ *
+ * Registers a GPU device with the abstraction layer.
+ *
+ * Return: GPU device ID on success, negative error code on failure
+ */
+int ai_gpu_register_device(u32 type, const char *name, u64 total_memory);
+
+/**
+ * ai_gpu_find_device - Find a GPU device by ID
+ * @gpu_id: GPU device ID
+ *
+ * Finds a GPU device by its ID.
+ *
+ * Return: Pointer to GPU device, or NULL if not found
+ */
+struct ai_gpu_device *ai_gpu_find_device(int gpu_id);
+
+/**
+ * ai_gpu_get_device_count - Get number of GPU devices
+ *
+ * Returns the number of registered GPU devices.
+ *
+ * Return: Number of GPU devices
+ */
+int ai_gpu_get_device_count(void);
+
+/**
+ * ai_gpu_alloc_memory - Allocate GPU memory
+ * @gpu_id: GPU device ID
+ * @size: Size in bytes to allocate
+ * @flags: Allocation flags
+ *
+ * Allocates memory on the specified GPU device.
+ *
+ * Return: GPU memory pointer on success, NULL on failure
+ */
+void *ai_gpu_alloc_memory(int gpu_id, size_t size, u32 flags);
+
+/**
+ * ai_gpu_free_memory - Free GPU memory
+ * @gpu_id: GPU device ID
+ * @memory: GPU memory pointer to free
+ * @size: Size of memory to free
+ *
+ * Frees memory allocated on the GPU device.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_gpu_free_memory(int gpu_id, void *memory, size_t size);
+
+/**
+ * ai_gpu_launch_kernel - Launch a GPU kernel
+ * @gpu_id: GPU device ID
+ * @kernel_name: Name of kernel to launch
+ * @grid_dim: Grid dimensions
+ * @block_dim: Block dimensions
+ * @args: Kernel arguments
+ * @args_size: Size of arguments
+ *
+ * Launches a kernel on the specified GPU device.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_gpu_launch_kernel(int gpu_id, const char *kernel_name,
+			 u32 grid_dim[3], u32 block_dim[3],
+			 void *args, size_t args_size);
+
+/**
+ * ai_gpu_synchronize - Synchronize GPU operations
+ * @gpu_id: GPU device ID
+ *
+ * Waits for all GPU operations to complete.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_gpu_synchronize(int gpu_id);
+
+/**
+ * ai_gpu_handle_error - Handle GPU error
+ * @gpu_id: GPU device ID
+ * @error_code: Error code
+ *
+ * Handles GPU errors and implements error recovery.
+ *
+ * Return: 0 on success, negative error code on failure
+ */
+int ai_gpu_handle_error(int gpu_id, int error_code);
+
+/**
+ * ai_gpu_get_stats - Get GPU statistics
+ * @gpu_id: GPU device ID
+ * @memory_allocated: Pointer to store allocated memory
+ * @free_memory: Pointer to store free memory
+ * @kernel_launches: Pointer to store kernel launch count
+ * @errors: Pointer to store error count
+ *
+ * Retrieves statistics for a GPU device.
+ */
+void ai_gpu_get_stats(int gpu_id, u64 *memory_allocated, u64 *free_memory,
+		      u64 *kernel_launches, u64 *errors);
+
+/* CUDA-specific functions */
+int ai_cuda_init(void);
+void ai_cuda_destroy(void);
+int ai_cuda_create_context(int gpu_id);
+void *ai_cuda_alloc_memory(int gpu_id, size_t size, u32 flags);
+int ai_cuda_free_memory(int gpu_id, void *memory);
+int ai_cuda_copy_to_device(int gpu_id, void *dst, const void *src, size_t size);
+int ai_cuda_copy_from_device(int gpu_id, void *dst, const void *src, size_t size);
+int ai_cuda_launch_kernel(int gpu_id, const char *kernel_name,
+			  u32 grid_dim[3], u32 block_dim[3],
+			  void *args, size_t args_size);
+int ai_cuda_synchronize(int gpu_id);
+u32 ai_cuda_get_version(int gpu_id);
+u32 ai_cuda_get_compute_capability(int gpu_id);
+
+/* OpenCL-specific functions */
+int ai_opencl_init(void);
+void ai_opencl_destroy(void);
+int ai_opencl_create_context(int gpu_id, const char *vendor);
+void *ai_opencl_alloc_buffer(int gpu_id, size_t size, u32 flags);
+int ai_opencl_free_buffer(int gpu_id, void *buffer);
+int ai_opencl_write_buffer(int gpu_id, void *buffer, const void *data, size_t size);
+int ai_opencl_read_buffer(int gpu_id, void *buffer, void *data, size_t size);
+int ai_opencl_execute_kernel(int gpu_id, const char *kernel_name,
+			     size_t global_work_size[3],
+			     size_t local_work_size[3],
+			     void **args, u32 num_args);
+int ai_opencl_synchronize(int gpu_id);
+int ai_opencl_get_vendor(int gpu_id, char *vendor, size_t vendor_size);
+
+/* Unified memory functions */
+int ai_unified_memory_init(void);
+void ai_unified_memory_destroy(void);
+void *ai_unified_memory_alloc(size_t size, int gpu_id, u32 flags);
+int ai_unified_memory_free(void *cpu_ptr);
+int ai_unified_memory_migrate_to_gpu(void *cpu_ptr);
+int ai_unified_memory_migrate_to_cpu(void *cpu_ptr);
+void *ai_unified_memory_get_gpu_ptr(void *cpu_ptr);
+void ai_unified_memory_get_stats(u64 *total_allocated);
+
+/* Inference execution functions */
+int ai_inference_init(void);
+int ai_inference_prepare(struct ai_request *req, int gpu_id);
+int ai_inference_execute(struct ai_request *req, struct ai_model_info *model, int gpu_id);
+int ai_inference_complete(struct ai_request *req, int gpu_id);
+int ai_inference_execute_batch(struct ai_request **requests, u32 num_requests,
+			       struct ai_model_info *model, int gpu_id);
+void ai_inference_get_stats(u64 *total_inferences, u64 *successful_inferences,
+			    u64 *failed_inferences, u64 *avg_time_ns);
+
+/**
+ * @defgroup ai_scheduler Scheduler Integration
+ * @brief Scheduler hooks and policies for AI worker threads
+ * @{
+ */
+
+/**
+ * @struct ai_sched_stats
+ * @brief Statistics for scheduler integration
+ */
+struct ai_sched_stats {
+	u64 priority_boosts;          /**< Number of priority boosts applied */
+	u64 rt_scheduling_activations; /**< Real-time scheduling activations */
+	u64 cpu_affinity_changes;     /**< CPU affinity changes */
+	u64 gpu_scheduling_decisions; /**< GPU scheduling decisions */
+	u64 scheduler_hooks_called;   /**< Total scheduler hooks called */
+};
+
+/* Scheduler integration functions */
+int ai_sched_init(void);
+void ai_sched_destroy(void);
+int ai_sched_boost_priority(struct task_struct *task, u32 priority);
+int ai_sched_set_realtime(struct task_struct *task, int priority);
+int ai_sched_restore_normal(struct task_struct *task);
+int ai_sched_set_cpu_affinity(struct task_struct *task, const struct cpumask *mask);
+int ai_sched_map_request_priority(u32 request_priority);
+int ai_sched_get_gpu_priority(struct ai_request *req);
+int ai_sched_coordinate_gpu(struct ai_request *req, int gpu_id);
+int ai_sched_allocate_gpu_resource(struct ai_request *req, int gpu_id);
+int ai_sched_get_stats(struct ai_sched_stats *stats);
+
+/** @} */
+
+/**
+ * @defgroup ai_batch Request Batching
+ * @brief Request batching for improved throughput
+ * @{
+ */
+
+/* Forward declaration */
+struct ai_batch;
+
+/* Batch functions */
+int ai_batch_init(void);
+void ai_batch_destroy(void);
+int ai_batch_collect_requests(struct ai_request_queue *queue, struct ai_batch *batch,
+			      u32 max_requests, u32 timeout_ms);
+int ai_batch_process(struct ai_batch *batch, struct ai_model_info *model);
+void ai_batch_optimize_size(void);
+u32 ai_batch_get_optimal_size(void);
+void ai_batch_get_stats(u64 *batches_created, u64 *batches_processed,
+			u64 *requests_batched, u64 *avg_batch_size, u64 *max_batch_size);
+
+/** @} */
+
+/**
+ * @defgroup ai_cache Result Caching
+ * @brief Result caching to avoid redundant computation
+ * @{
+ */
+
+/* Cache functions */
+int ai_cache_init(u32 max_size);
+void ai_cache_destroy(void);
+int ai_cache_lookup(const void *input_data, size_t input_len, u32 model_id,
+		    void **output_data, size_t *output_len);
+int ai_cache_insert(const void *input_data, size_t input_len, u32 model_id,
+		    const void *output_data, size_t output_len);
+void ai_cache_clear(void);
+void ai_cache_get_stats(u32 *size, u32 *max_size, u64 *hits, u64 *misses, u64 *evictions);
+
+/** @} */
+
+/**
+ * @defgroup ai_perf Performance Monitoring
+ * @brief Performance counters and monitoring
+ * @{
+ */
+
+/**
+ * @struct ai_perf_stats
+ * @brief Performance statistics structure
+ */
+struct ai_perf_stats {
+	/* Request statistics */
+	u64 total_requests;
+	u64 completed_requests;
+	u64 failed_requests;
+	u64 cancelled_requests;
+
+	/* Latency statistics */
+	u64 avg_latency_ns;
+	u64 min_latency_ns;
+	u64 max_latency_ns;
+	u64 avg_queue_wait_ns;
+	u64 avg_processing_ns;
+
+	/* Throughput statistics */
+	u64 requests_per_second;
+	u64 peak_requests_per_second;
+
+	/* GPU statistics */
+	u64 gpu_inferences;
+	u64 gpu_memory_allocated;
+	u64 gpu_memory_used;
+	u64 gpu_kernel_launches;
+	u64 gpu_errors;
+	u32 gpu_utilization_percent;
+
+	/* Queue statistics */
+	u64 queue_depth_avg;
+	u64 queue_depth_max;
+
+	/* Worker statistics */
+	u32 worker_threads_active;
+	u32 worker_threads_idle;
+	u32 worker_load_avg;
+
+	/* Batch statistics */
+	u64 batches_processed;
+	u64 avg_batch_size;
+	u32 batch_efficiency_percent;
+
+	/* Cache statistics */
+	u64 cache_hits;
+	u64 cache_misses;
+	u32 cache_hit_rate_percent;
+};
+
+/* Performance monitoring functions */
+int ai_perf_init(void);
+void ai_perf_destroy(void);
+void ai_perf_record_request(u64 latency_ns, u64 queue_wait_ns, u64 processing_ns, bool success);
+void ai_perf_record_queue_depth(u32 depth);
+void ai_perf_record_gpu_operation(u64 memory_allocated, u64 memory_used,
+				   u64 kernel_launches, u64 errors);
+void ai_perf_record_gpu_inference(void);
+void ai_perf_record_worker_state(u32 active, u32 idle, u32 load_avg);
+void ai_perf_record_batch(u32 batch_size, u32 efficiency);
+void ai_perf_record_cache(bool hit);
+void ai_perf_set_gpu_utilization(u32 utilization);
+int ai_perf_get_stats(struct ai_perf_stats *stats);
+
+/** @} */
+
+/**
+ * @defgroup ai_error Error Handling
+ * @brief Error handling and recovery mechanisms
+ * @{
+ */
+
+/* Error handling functions */
+int ai_error_init(void);
+void ai_error_destroy(void);
+void ai_error_record(int error_code, bool recoverable);
+bool ai_error_should_retry(struct ai_request *req, int error_code);
+int ai_error_retry_request(struct ai_request *req, struct ai_request_queue *queue);
+int ai_error_handle_recovery(struct ai_request *req, struct ai_request_queue *queue,
+			     int error_code);
+u32 ai_error_get_error_rate(void);
+void ai_error_get_stats(u64 *total_errors, u64 *recoverable_errors, u64 *fatal_errors,
+			u64 *retries_attempted, u64 *retries_succeeded, u64 *retries_failed);
+
+/** @} */
+
+/**
+ * @defgroup ai_security Security and Access Control
+ * @brief Security validation, access control, and memory protection
+ * @{
+ */
+
+/* Security functions */
+int ai_security_init(void);
+void ai_security_destroy(void);
+int ai_security_validate_input(const void *input_data, size_t input_len);
+int ai_security_validate_output(void *output_buffer, size_t output_len);
+int ai_security_check_rate_limit(kuid_t uid);
+int ai_security_check_pending_limit(kuid_t uid);
+void ai_security_release_pending(kuid_t uid);
+int ai_security_check_model_access(kuid_t uid, kgid_t gid, u32 model_id);
+int ai_security_set_model_permission(u32 model_id, kuid_t owner_uid, kgid_t owner_gid, umode_t mode);
+void ai_security_audit_log(kuid_t uid, u32 model_id, u64 request_id,
+			   int event_type, const char *message);
+int ai_security_validate_request(struct ai_request *req);
+void ai_security_sanitize_memory(void *ptr, size_t size);
+void ai_security_get_stats(u64 *validation_checks, u64 *access_denied,
+			   u64 *resource_limits_hit, u64 *dos_attempts,
+			   u64 *memory_violations);
 
 /** @} */
 

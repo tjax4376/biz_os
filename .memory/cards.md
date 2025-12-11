@@ -129,3 +129,21 @@
 - Split pip installations into separate RUN commands for better error handling
 - Fixed Node.js installation to update apt-get before installing
 
+### Build Instructions Documentation (2025-01-27)
+**Issue**: No comprehensive build instructions for downloading and compiling BIZ_OS
+**Solution**: Created BUILD_INSTRUCTIONS.md with complete workflow from git clone to OS compilation using Bizos-dev Docker container
+**Components**:
+- Prerequisites (Git, Docker, system requirements)
+- Git clone instructions
+- Docker setup and container building (3 methods: docker-compose, script, manual)
+- Kernel compilation steps (with architecture options)
+- AI runtime compilation (kernel modules + Rust daemon)
+- Testing procedures
+- Comprehensive troubleshooting section
+- Quick reference for essential commands
+
+**Status**: ✅ Implemented
+**Files**:
+- `BUILD_INSTRUCTIONS.md` (new, ~600 lines)
+- `JOURNAL.md` (updated with session notes)
+

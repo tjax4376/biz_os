@@ -146,6 +146,8 @@ SYSCALL_DEFINE5(ai_inference,
 	req->completion = completion;
 	req->result_fd = -1;
 	req->error_code = 0;
+	req->user_id = current_uid();
+	req->group_id = current_gid();
 
 	/* Enqueue request */
 	ret = ai_request_enqueue(&ai_global_queue, req);
@@ -291,6 +293,8 @@ SYSCALL_DEFINE5(ai_inference_async,
 	req->completion = NULL; /* No completion for async */
 	req->result_fd = -1; /* TODO: Implement eventfd for async notification */
 	req->error_code = 0;
+	req->user_id = current_uid();
+	req->group_id = current_gid();
 
 	/* Enqueue request */
 	ret = ai_request_enqueue(&ai_global_queue, req);
