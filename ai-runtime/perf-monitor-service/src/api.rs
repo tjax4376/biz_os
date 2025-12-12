@@ -232,6 +232,15 @@ async fn generate_ui_layout(
         return Err(StatusCode::BAD_REQUEST);
     }
 
+    let screen_trimmed = req.screen.trim();
+    if screen_trimmed.is_empty() || screen_trimmed.len() > 32 {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    let normalized_screen = screen_trimmed.to_ascii_lowercase();
+    if normalized_screen != "mobile" && normalized_screen != "desktop" {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
     let mut context_matches: Vec<ContextMatch> = Vec::new();
     if !req.embedding.is_empty() {
         let ctx_response = state
@@ -250,7 +259,7 @@ async fn generate_ui_layout(
     }
 
     let planner = LayoutPlanner::default();
-    let layout = planner.plan(&req.intent, &req.screen, &context_matches);
+    let layout = planner.plan(&req.intent, &normalized_screen, &context_matches);
     verification::verify_layout(&planner, &layout).map_err(|_| StatusCode::UNPROCESSABLE_ENTITY)?;
 
     Ok(Json(UiLayoutResponse { layout }))

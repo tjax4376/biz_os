@@ -3296,3 +3296,23 @@ Implemented the first post-plan technology leap: connector SDK + event mesh, hyb
 2. Persist context graph + embeddings to SQLite/graph store for durability.
 3. Extend adaptive UI verification to include automated accessibility + visual regression scans.
 4. Add quota modeling + richer logging to workflow sandbox/policy enforcement before allowing execution.
+
+## Session: Throttle + UI Validation Fixes
+**Date**: 2025-12-11  
+**Session Type**: Bug Fix
+
+### Context Description
+
+Addressed two regressions reported in the connector event throttling logic and adaptive UI API validation.
+
+### Discussion Points
+
+1. **Connector Throttle**: Reworked `forward_events` sliding-window logic so the per-second rate limit resets only after the window expires or after sleeping through the remainder of the second. This removes the double-reset that previously allowed bursts above the configured threshold.
+2. **UI Screen Validation**: Added normalization + allowlist checks for the `screen` field in `/api/v1/ui/generate`, ensuring only `"mobile"` or `"desktop"` (<=32 chars) are accepted to prevent undefined layouts.
+3. **Testing**: Ran `cargo test -p perf-monitor-service` (passes). `cargo check -p learning-engine` still fails due to pre-existing serialization/equality derives missing in other modules; captured failure reasons in the session summary.
+
+### Code Changes Summary
+
+- Updated `learning-engine/src/connector.rs` to implement a single-window throttle that sleeps until the next second before resuming.
+- Hardened `perf-monitor-service/src/api.rs` to validate and normalize `screen` before planning layouts.
+- Documented the work here; perf-monitor-service tests executed successfully. Learning-engine check remains blocked by unrelated derive gaps (StoredEvent/UserEvent and EventType hashability).

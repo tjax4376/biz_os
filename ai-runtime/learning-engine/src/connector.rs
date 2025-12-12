@@ -1,4 +1,3 @@
-
 //! Connector SDK primitives for the BIZ_OS data fabric.
 //! The SDK ensures every connector follows the same contract-driven,
 //! policy-aware pattern before it can publish events into the mesh.
@@ -201,16 +200,22 @@ pub async fn forward_events(
     schema_registry: SchemaRegistry,
     throttle: Option<u32>,
 ) -> Result<()> {
-    use tokio::time::{interval, Instant};
+    use tokio::time::{sleep_until, Instant};
 
-    let limit = throttle.unwrap_or(500);
+    let limit = throttle.unwrap_or(500).max(1);
     let mut window_start = Instant::now();
     let mut sent_this_window = 0u32;
 
     while let Some(event) = rx.recv().await {
+        let now = Instant::now();
+        if now.duration_since(window_start) >= Duration::from_secs(1) {
+            window_start = now;
+            sent_this_window = 0;
+        }
+
         if sent_this_window >= limit {
-            let mut ticker = interval(Duration::from_secs(1));
-            ticker.tick().await;
+            let wait_until = window_start + Duration::from_secs(1);
+            sleep_until(wait_until).await;
             window_start = Instant::now();
             sent_this_window = 0;
         }
@@ -220,13 +225,7 @@ pub async fn forward_events(
             .map_err(|err| ConnectorError::Schema(err.to_string()))?;
 
         publisher.publish(event.envelope()).await?;
-
         sent_this_window += 1;
-
-        if window_start.elapsed() >= Duration::from_secs(1) {
-            window_start = Instant::now();
-            sent_this_window = 0;
-        }
     }
 
     Ok(())
