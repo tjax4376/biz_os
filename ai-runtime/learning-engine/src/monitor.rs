@@ -1,10 +1,10 @@
 // User Action Monitor
 // Monitors user actions for learning
 
+use anyhow::Result;
 use std::sync::Arc;
 use tokio::sync::mpsc;
-use tracing::{info, debug};
-use anyhow::Result;
+use tracing::{debug, info};
 
 #[derive(Debug, Clone)]
 pub struct UserEvent {
@@ -32,14 +32,20 @@ impl Monitor {
 
     pub async fn record_event(&self, event: UserEvent) -> Result<()> {
         debug!("Recording event: {:?}", event.event_type);
-        
-        self.event_tx.send(event).await
+
+        self.event_tx
+            .send(event)
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to send event: {}", e))?;
-        
+
         Ok(())
     }
 
-    pub async fn record_process_execution(&self, process_name: &str, args: &[String]) -> Result<()> {
+    pub async fn record_process_execution(
+        &self,
+        process_name: &str,
+        args: &[String],
+    ) -> Result<()> {
         let event = UserEvent {
             event_type: EventType::ProcessExecution,
             timestamp: std::time::SystemTime::now()
@@ -50,7 +56,7 @@ impl Monitor {
                 "args": args,
             }))?,
         };
-        
+
         self.record_event(event).await
     }
 
@@ -65,8 +71,7 @@ impl Monitor {
                 "path": path,
             }))?,
         };
-        
+
         self.record_event(event).await
     }
 }
-

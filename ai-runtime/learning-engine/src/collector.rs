@@ -1,14 +1,14 @@
 // Event Collector
 // Collects and stores user events for learning
 
-use super::monitor::{UserEvent, EventType};
+use super::monitor::{EventType, UserEvent};
+use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio::sync::RwLock;
 use tracing::{info, warn};
-use anyhow::Result;
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct StoredEvent {
@@ -37,10 +37,7 @@ struct PrivacySettings {
 }
 
 impl Collector {
-    pub fn new(
-        event_rx: mpsc::Receiver<UserEvent>,
-        storage_path: PathBuf,
-    ) -> Self {
+    pub fn new(event_rx: mpsc::Receiver<UserEvent>, storage_path: PathBuf) -> Self {
         Self {
             event_rx,
             storage_path,
@@ -69,7 +66,7 @@ impl Collector {
 
     async fn process_event(&self, event: UserEvent) -> Result<()> {
         let privacy_level = self.determine_privacy_level(&event).await;
-        
+
         let stored = StoredEvent {
             event,
             privacy_level,
@@ -87,8 +84,9 @@ impl Collector {
 
     async fn determine_privacy_level(&self, event: &UserEvent) -> PrivacyLevel {
         let settings = self.privacy_settings.read().await;
-        
-        settings.per_event_type
+
+        settings
+            .per_event_type
             .get(&event.event_type)
             .copied()
             .unwrap_or(settings.default_level)
@@ -96,10 +94,6 @@ impl Collector {
 
     pub async fn get_events(&self, limit: usize) -> Vec<StoredEvent> {
         let events = self.events.read().await;
-        events.iter()
-            .take(limit)
-            .cloned()
-            .collect()
+        events.iter().take(limit).cloned().collect()
     }
 }
-

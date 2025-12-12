@@ -17,12 +17,15 @@ use tokio::{signal, time};
 use tracing::info;
 
 mod api;
+mod context_client;
 mod detectors;
 mod models;
 mod syscalls;
+mod ui;
 
 use crate::{
     api::create_router,
+    context_client::ContextClient,
     models::{AppState, AppStateInner, SnapshotStore},
 };
 
@@ -51,11 +54,15 @@ async fn main() -> Result<()> {
         .unwrap_or(900); // ~15 min at 1s
 
     let store = SnapshotStore::new(history_capacity);
+    let context_base =
+        std::env::var("BIZOS_CONTEXT_BASE_URL").unwrap_or_else(|_| "http://127.0.0.1:8080".into());
+    let context_client = ContextClient::new(context_base, Duration::from_secs(3));
 
     let state = AppState {
         inner: Arc::new(AppStateInner {
             store,
             suggest_only: true, // Per user choice (1)
+            context_client,
         }),
     };
 

@@ -2,8 +2,8 @@
 // Detects patterns in user behavior
 
 use crate::learning_engine::processor::ProcessedEvent;
-use tracing::info;
 use anyhow::Result;
+use tracing::info;
 
 #[derive(Debug, Clone)]
 pub struct Pattern {
@@ -33,14 +33,14 @@ impl PatternDetector {
 
     pub async fn detect_patterns(&self, events: &[ProcessedEvent]) -> Result<Vec<Pattern>> {
         info!("Detecting patterns in {} events", events.len());
-        
+
         let mut patterns = Vec::new();
-        
+
         // TODO: Implement pattern detection algorithms
         // - Sequence mining for workflows
         // - Clustering for task groups
         // - Time series analysis for temporal patterns
-        
+
         // Placeholder: return empty patterns for now
         Ok(patterns)
     }
@@ -57,4 +57,3 @@ impl PatternDetector {
         Ok(Vec::new())
     }
 }
-

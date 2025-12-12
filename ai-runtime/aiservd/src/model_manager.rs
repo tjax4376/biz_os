@@ -19,7 +19,7 @@ pub struct ModelInfo {
 
 #[derive(Debug, Clone)]
 pub enum ModelType {
-    LLM,           // Large Language Model (Mistral)
+    LLM, // Large Language Model (Mistral)
     PatternRecognition,
     UIGeneration,
     ProcessMining,
@@ -33,7 +33,7 @@ pub struct ModelManager {
 impl ModelManager {
     pub async fn new(config: &Config) -> Result<Self> {
         let model_dir = Path::new(&config.model_dir);
-        
+
         // Ensure model directory exists
         std::fs::create_dir_all(model_dir)
             .with_context(|| format!("Failed to create model directory: {:?}", model_dir))?;
@@ -55,7 +55,7 @@ impl ModelManager {
 
     async fn scan_models(&self) -> Result<()> {
         let model_dir = Path::new(&self.config.model_dir);
-        
+
         if !model_dir.exists() {
             warn!("Model directory does not exist: {:?}", model_dir);
             return Ok(());
@@ -73,8 +73,11 @@ impl ModelManager {
                 loaded: false,
                 size_bytes: Self::calculate_size(&mistral_path)?,
             };
-            
-            self.models.write().await.insert("mistral7b".to_string(), model_info);
+
+            self.models
+                .write()
+                .await
+                .insert("mistral7b".to_string(), model_info);
             info!("Found Mistral 7B model");
         } else {
             warn!("Mistral 7B model not found at: {:?}", mistral_path);
@@ -86,7 +89,7 @@ impl ModelManager {
 
     fn calculate_size(path: &Path) -> Result<u64> {
         let mut total = 0u64;
-        
+
         if path.is_file() {
             total += std::fs::metadata(path)?.len();
         } else if path.is_dir() {
@@ -95,7 +98,7 @@ impl ModelManager {
                 total += Self::calculate_size(&entry.path())?;
             }
         }
-        
+
         Ok(total)
     }
 
@@ -109,7 +112,7 @@ impl ModelManager {
 
     pub async fn load_model(&self, model_id: &str) -> Result<()> {
         let mut models = self.models.write().await;
-        
+
         if let Some(model) = models.get_mut(model_id) {
             if model.loaded {
                 info!("Model {} already loaded", model_id);
@@ -130,7 +133,7 @@ impl ModelManager {
 
     pub async fn unload_model(&self, model_id: &str) -> Result<()> {
         let mut models = self.models.write().await;
-        
+
         if let Some(model) = models.get_mut(model_id) {
             if !model.loaded {
                 warn!("Model {} not loaded", model_id);
@@ -148,4 +151,3 @@ impl ModelManager {
         Ok(())
     }
 }
-

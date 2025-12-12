@@ -12,12 +12,9 @@ pub struct InferenceEngine {
 }
 
 impl InferenceEngine {
-    pub async fn new(
-        model_manager: Arc<ModelManager>,
-        config: &Config,
-    ) -> Result<Self> {
+    pub async fn new(model_manager: Arc<ModelManager>, config: &Config) -> Result<Self> {
         info!("Initializing inference engine");
-        
+
         let engine = Self {
             _model_manager: model_manager,
             _config: Arc::new(config.clone()),
@@ -37,11 +34,11 @@ impl InferenceEngine {
         // self._model_manager.load_model(model_id).await?;
 
         info!("Running inference with model: {}", _model_id);
-        
+
         // TODO: Implement actual inference
         // This will integrate with the model execution backend
         // For Mistral, this will use llama.cpp or similar
-        
+
         warn!("Inference not yet implemented - placeholder response");
         Ok(format!("Inference result for input: {}", input))
     }
@@ -55,4 +52,3 @@ impl InferenceEngine {
         Ok(results)
     }
 }
-

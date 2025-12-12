@@ -2,6 +2,7 @@
 members = [
     "aiservd",
     "diagnostic-service",
+    "learning-engine",
     "perf-monitor-service",
 ]
 resolver = "2"

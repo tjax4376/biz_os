@@ -1,0 +1,22 @@
+syntax = "proto3";
+package bizos.ingestion.v1;
+
+message EventRequest {
+  string namespace = 1;
+  string schema_namespace = 2;
+  string schema_name = 3;
+  uint32 schema_major = 4;
+  uint32 schema_minor = 5;
+  uint32 schema_patch = 6;
+  string payload_json = 7;
+  string privacy = 8;
+}
+
+message PublishResponse {
+  string event_id = 1;
+  string status = 2;
+}
+
+service EventIngestion {
+  rpc PublishEvent(EventRequest) returns (PublishResponse);
+}

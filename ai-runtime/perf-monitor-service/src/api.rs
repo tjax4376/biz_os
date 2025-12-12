@@ -15,11 +15,13 @@ use axum::{
 };
 
 use crate::{
+    context_client::{ContextMatch, ContextQueryRequest, ContextQueryResponse},
     detectors,
     models::{
-        AnalyzeRequest, AnalyzeResponse, AppState, Issue, RemediationPlanRequest,
-        RemediationPlanResponse, RemediationAction,
+        AnalyzeRequest, AnalyzeResponse, AppState, Issue, RemediationAction,
+        RemediationPlanRequest, RemediationPlanResponse,
     },
+    ui::{verification, LayoutPlanner},
 };
 
 #[derive(serde::Serialize)]
@@ -36,6 +38,8 @@ pub fn create_router(state: AppState) -> Router {
         .route("/api/v1/analyze", post(analyze))
         .route("/api/v1/remediation/plan", post(remediation_plan))
         .route("/api/v1/remediation/execute", post(remediation_execute))
+        .route("/api/v1/context/query", post(query_context))
+        .route("/api/v1/ui/generate", post(generate_ui_layout))
         .with_state(state)
 }
 
@@ -43,18 +47,37 @@ async fn healthz() -> Json<HealthResponse> {
     Json(HealthResponse { status: "ok" })
 }
 
-async fn get_system_metrics(State(state): State<AppState>) -> Result<Json<crate::models::SystemMetrics>, StatusCode> {
-    let snap = state.inner.store.latest().await.ok_or(StatusCode::SERVICE_UNAVAILABLE)?;
+async fn get_system_metrics(
+    State(state): State<AppState>,
+) -> Result<Json<crate::models::SystemMetrics>, StatusCode> {
+    let snap = state
+        .inner
+        .store
+        .latest()
+        .await
+        .ok_or(StatusCode::SERVICE_UNAVAILABLE)?;
     Ok(Json(snap.system))
 }
 
-async fn get_ai_perf_stats(State(state): State<AppState>) -> Result<Json<crate::models::AiPerfStats>, StatusCode> {
-    let snap = state.inner.store.latest().await.ok_or(StatusCode::SERVICE_UNAVAILABLE)?;
+async fn get_ai_perf_stats(
+    State(state): State<AppState>,
+) -> Result<Json<crate::models::AiPerfStats>, StatusCode> {
+    let snap = state
+        .inner
+        .store
+        .latest()
+        .await
+        .ok_or(StatusCode::SERVICE_UNAVAILABLE)?;
     Ok(Json(snap.ai_perf))
 }
 
 async fn get_issues(State(state): State<AppState>) -> Result<Json<Vec<Issue>>, StatusCode> {
-    let snap = state.inner.store.latest().await.ok_or(StatusCode::SERVICE_UNAVAILABLE)?;
+    let snap = state
+        .inner
+        .store
+        .latest()
+        .await
+        .ok_or(StatusCode::SERVICE_UNAVAILABLE)?;
     Ok(Json(detectors::detect(&snap)))
 }
 
@@ -66,14 +89,22 @@ async fn analyze(
         return Err(StatusCode::BAD_REQUEST);
     }
 
-    let snap = state.inner.store.latest().await.ok_or(StatusCode::SERVICE_UNAVAILABLE)?;
+    let snap = state
+        .inner
+        .store
+        .latest()
+        .await
+        .ok_or(StatusCode::SERVICE_UNAVAILABLE)?;
     let history_samples = state.inner.store.len().await;
 
     let issues = detectors::detect(&snap);
 
     // AI narration placeholder (safe): narrative is derived from deterministic issues.
     let narrative = if issues.is_empty() {
-        format!("Query: '{}'. No issues detected from current counters.", req.query)
+        format!(
+            "Query: '{}'. No issues detected from current counters.",
+            req.query
+        )
     } else {
         format!(
             "Query: '{}'. Detected {} issue(s): {}.",
@@ -114,7 +145,9 @@ async fn remediation_plan(
             expected_impact: "Reduce queue depth and latency by lowering incoming load".to_string(),
             risk: "Low".to_string(),
             rollback: "Remove throttle after duration or reduce percent".to_string(),
-            preconditions: vec!["Throttling capability available in runtime/edge gateway".to_string()],
+            preconditions: vec![
+                "Throttling capability available in runtime/edge gateway".to_string()
+            ],
         });
     }
 
@@ -122,7 +155,8 @@ async fn remediation_plan(
     actions.push(RemediationAction {
         action_id: "clear_ai_cache".to_string(),
         params: serde_json::json!({}),
-        expected_impact: "Eliminate stale/poisoned cache entries; may increase compute temporarily".to_string(),
+        expected_impact: "Eliminate stale/poisoned cache entries; may increase compute temporarily"
+            .to_string(),
         risk: "Low".to_string(),
         rollback: "None required (cache repopulates)".to_string(),
         preconditions: vec!["AI cache clear endpoint/syscall exists".to_string()],
@@ -139,7 +173,9 @@ async fn remediation_plan(
     }))
 }
 
-async fn remediation_execute(State(state): State<AppState>) -> Result<Json<serde_json::Value>, StatusCode> {
+async fn remediation_execute(
+    State(state): State<AppState>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
     // Per user choice (1): suggest-only.
     if state.inner.suggest_only {
         return Err(StatusCode::FORBIDDEN);
@@ -147,6 +183,77 @@ async fn remediation_execute(State(state): State<AppState>) -> Result<Json<serde
 
     // Even if enabled in future, execution must be allowlisted + authenticated.
     Err(StatusCode::NOT_IMPLEMENTED)
+}
+
+async fn query_context(
+    State(state): State<AppState>,
+    Json(req): Json<ContextQueryRequest>,
+) -> Result<Json<ContextQueryResponse>, StatusCode> {
+    if req.embedding.is_empty() || req.embedding.len() > 1024 {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    state
+        .inner
+        .context_client
+        .query(req)
+        .await
+        .map(Json)
+        .map_err(|err| {
+            tracing::error!("context query failed: {err:?}");
+            StatusCode::BAD_GATEWAY
+        })
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+struct UiLayoutRequest {
+    intent: String,
+    screen: String,
+    #[serde(default)]
+    embedding: Vec<f32>,
+    #[serde(default = "default_ui_top_k")]
+    top_k: usize,
+}
+
+fn default_ui_top_k() -> usize {
+    5
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+struct UiLayoutResponse {
+    layout: Vec<crate::ui::GeneratedComponent>,
+}
+
+async fn generate_ui_layout(
+    State(state): State<AppState>,
+    Json(req): Json<UiLayoutRequest>,
+) -> Result<Json<UiLayoutResponse>, StatusCode> {
+    if req.intent.trim().is_empty() || req.intent.len() > 1024 {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    let mut context_matches: Vec<ContextMatch> = Vec::new();
+    if !req.embedding.is_empty() {
+        let ctx_response = state
+            .inner
+            .context_client
+            .query(ContextQueryRequest {
+                embedding: req.embedding.clone(),
+                top_k: req.top_k,
+            })
+            .await
+            .map_err(|err| {
+                tracing::error!("context enrichment failed: {err:?}");
+                StatusCode::BAD_GATEWAY
+            })?;
+        context_matches = ctx_response.results;
+    }
+
+    let planner = LayoutPlanner::default();
+    let layout = planner.plan(&req.intent, &req.screen, &context_matches);
+    verification::verify_layout(&planner, &layout).map_err(|_| StatusCode::UNPROCESSABLE_ENTITY)?;
+
+    Ok(Json(UiLayoutResponse { layout }))
 }
 
 fn uuid_suffix() -> String {

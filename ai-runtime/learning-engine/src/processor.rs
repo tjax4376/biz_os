@@ -2,8 +2,8 @@
 // Processes events for pattern detection
 
 use crate::learning_engine::collector::StoredEvent;
-use tracing::info;
 use anyhow::Result;
+use tracing::info;
 
 pub struct Processor {
     // TODO: Add processing state
@@ -16,22 +16,22 @@ impl Processor {
 
     pub async fn process_events(&self, events: &[StoredEvent]) -> Result<Vec<ProcessedEvent>> {
         info!("Processing {} events", events.len());
-        
+
         let mut processed = Vec::new();
-        
+
         for event in events {
             // Normalize event data
             let normalized = self.normalize_event(event).await?;
             processed.push(normalized);
         }
-        
+
         Ok(processed)
     }
 
     async fn normalize_event(&self, event: &StoredEvent) -> Result<ProcessedEvent> {
         // TODO: Implement event normalization
         // Extract key features, normalize timestamps, etc.
-        
+
         Ok(ProcessedEvent {
             event_type: event.event.event_type.clone(),
             timestamp: event.event.timestamp,
@@ -46,4 +46,3 @@ pub struct ProcessedEvent {
     pub timestamp: u64,
     pub features: Vec<f64>,
 }
-

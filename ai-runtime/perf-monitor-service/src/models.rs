@@ -7,10 +7,14 @@
 // - change_rationale: Define shared types for snapshots, issues, and remediation plans.
 
 use serde::{Deserialize, Serialize};
-use std::{collections::VecDeque, sync::Arc, time::{SystemTime, UNIX_EPOCH}};
+use std::{
+    collections::VecDeque,
+    sync::Arc,
+    time::{SystemTime, UNIX_EPOCH},
+};
 use tokio::sync::RwLock;
 
-use crate::syscalls;
+use crate::{context_client::ContextClient, syscalls};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -20,6 +24,7 @@ pub struct AppState {
 pub struct AppStateInner {
     pub store: SnapshotStore,
     pub suggest_only: bool,
+    pub context_client: ContextClient,
 }
 
 #[derive(Clone)]

@@ -1,5 +1,101 @@
 # BIZ_OS Development Journal
 
+## Session: AI Learning Capabilities Extension Plan
+**Date**: 2025-01-27
+**Session Type**: Planning & Architecture Design
+
+### Context Description
+
+Created a comprehensive plan to extend BIZ_OS AI learning capabilities with:
+1. **LLM Memory System**: Local, persistent memory for context retention and retrieval
+2. **Business Application Credential Learning**: Ingestion and analysis of business app credentials to learn features and capabilities
+3. **Development Desktop Integration**: Full desktop development experience with AI-assisted context awareness
+
+The system will learn from collections of business application credentials (API keys, OAuth tokens, connection strings) to understand application features, capabilities, and business workflows, enabling intelligent automation and context-aware assistance.
+
+### Discussion Points
+
+#### Architecture Decisions
+1. **Modular Design**: Each component (LLM Memory Service, Business App Learning, Desktop Integration) is independently deployable
+2. **REST API Integration**: All modules communicate via REST endpoints, following user rules for separation
+3. **Local-First**: Memory and learning occur locally for privacy and security
+4. **Vector Storage**: SQLite with vector extension or ChromaDB for memory storage
+5. **Embedding Model**: Mistral 7B embedding model (via ONNX Runtime)
+
+#### Component Breakdown
+1. **LLM Memory Service** (Port 8081)
+   - Vector store for memory embeddings
+   - Embedding generation using Mistral 7B
+   - Semantic search and retrieval
+   - Memory management (expiration, compression)
+
+2. **Business App Credential Learning** (Port 8082)
+   - Credential ingestion (parsing, validation, encryption)
+   - API exploration and endpoint discovery
+   - Feature extraction from APIs
+   - Capability mapping to business functions
+
+3. **Development Desktop Integration** (Port 8083)
+   - VS Code extension for context awareness
+   - LSP server for IDE integration
+   - Terminal integration with shell hooks
+   - Context UI for memory and capability browsing
+
+4. **Enhanced Learning Engine**
+   - Context graph for relationship mapping
+   - Event mesh for reactive learning
+   - Integration with memory and business app learning
+
+#### Security Considerations
+- **STRIDE Threat Model**: Comprehensive threat analysis
+- **Credential Encryption**: AES-256 at rest
+- **Memory Privacy**: Privacy levels (Public, Private, Sensitive)
+- **API Security**: TLS 1.3, JWT authentication, rate limiting
+- **Audit Logging**: All credential access and memory operations logged
+
+#### Implementation Timeline
+- **Phase 1** (Weeks 1-3): LLM Memory Service
+- **Phase 2** (Weeks 4-6): Business App Credential Learning
+- **Phase 3** (Weeks 7-9): Development Desktop Integration
+- **Phase 4** (Weeks 10-11): Enhanced Learning Engine Integration
+- **Phase 5** (Week 12): Testing & Polish
+
+### Code Changes Summary
+
+#### Files Created
+1. **Extend-tasks.md** (new, comprehensive plan document)
+   - Executive summary and architecture overview
+   - Detailed component specifications
+   - REST API endpoint definitions
+   - Security considerations (STRIDE model)
+   - Testing strategy
+   - Deployment architecture
+   - Implementation phases with timelines
+   - Success metrics and risk mitigation
+
+#### Files Updated
+1. **.memory/cards.md** (updated)
+   - Added entry for AI Learning Capabilities Extension Plan
+   - Documented architecture decisions and timeline
+
+### Status
+
+✅ Extension Plan Created
+- Comprehensive plan document created (Extend-tasks.md)
+- Architecture designed following user rules (modular, REST API, independent deployment)
+- Security considerations included (STRIDE threat model)
+- Implementation phases defined with clear deliverables
+- Open questions identified for stakeholder review
+
+### Next Steps
+
+1. **Review & Approval**: Review plan with stakeholders
+2. **Clarify Requirements**: Answer open questions (vector DB choice, embedding model, credential formats)
+3. **Architecture Review**: Validate architecture decisions
+4. **Begin Implementation**: Start Phase 1 (LLM Memory Service) after approval
+
+---
+
 ## Session: Initial Research Phase
 **Date**: 2025-01-27
 **Session Type**: Research & Requirements Gathering
@@ -2884,3 +2980,319 @@ User requested comprehensive instructions for downloading BIZ_OS from git and co
 - Consider adding CI/CD build instructions
 - Add build instructions for additional components as they're developed
 
+---
+
+<<<<<<< Current (Your changes)
+## Session: MVP Plan Review and Revision
+**Date**: 2025-01-27
+**Session Type**: Planning & Status Review
+
+### Context Description
+
+User requested review of MVP_PLAN.md to validate what's left to build and produce a new plan. This session involved:
+- Comprehensive code review of kernel AI runtime components
+- Analysis of implementation status vs. placeholders
+- Identification of critical path items
+- Creation of revised implementation plan with realistic timelines
+
+### Discussion Points
+
+#### Implementation Status Analysis
+
+**Completed Components**:
+- Development infrastructure (Docker, build scripts, documentation)
+- Kernel AI runtime structure (data structures, request queue, system calls, workqueue, worker threads, scheduler hooks)
+- User-space runtime structure (daemon, model manager, inference engine, learning engine)
+- Build system configuration
+
+**Partially Complete (Placeholders Present)**:
+- GPU integration: Structure exists but CUDA/OpenCL operations are placeholders
+- Model loading: GGUF validation exists but full parser incomplete
+- Inference execution: Structure exists but actual inference is placeholder
+- Model memory management: Structure exists but GPU memory operations incomplete
+- Mistral integration: Placeholder in user-space
+- Pattern recognition: Structure exists but algorithms not implemented
+
+**Not Started**:
+- Bootable VM image (buildroot config exists but not tested)
+- Data integration (email, databases, APIs)
+- UI framework
+- Core applications
+- Comprehensive testing infrastructure
+
+#### Critical Path Identification
+
+**Critical Path 1: Kernel AI Runtime → Bootable System**
+- Complete GPU integration (CUDA/OpenCL)
+- Complete model loading (GGUF parser)
+- Complete inference execution
+- Test kernel module compilation
+- Create bootable image
+
+**Critical Path 2: User-Space Integration → Functional AI**
+- Complete Mistral model integration
+- Complete user-space syscall wrappers
+- Integrate kernel AI with user-space daemon
+
+**Critical Path 3: Learning Engine → Pattern Recognition**
+- Implement pattern detection algorithms
+- Implement classification logic
+- Integrate with kernel hooks
+
+#### Plan Revision Strategy
+
+**Key Changes**:
+1. **Focus on Critical Path**: Prioritize completing kernel AI runtime before other features
+2. **Realistic Timeline**: 22 weeks for core MVP (vs. original 24 weeks for full MVP)
+3. **Defer Non-Critical Features**: Data integration, UI framework, and applications deferred to post-MVP
+4. **Incremental Testing**: Test at each phase completion
+5. **Clear Success Criteria**: Define measurable goals for each phase
+
+**Revised Phases**:
+- Phase 1A (Weeks 1-3): Complete kernel AI runtime - CRITICAL
+- Phase 1B (Weeks 4-5): Bootable system & user-space integration - HIGH
+- Phase 2 (Weeks 6-8): Learning engine completion - MEDIUM
+- Phases 3-5: Deferred to post-MVP
+- Phase 6 (Weeks 21-22): Testing & polish
+
+### Code Changes Summary
+
+**New Files Created**:
+- `MVP_PLAN_REVISED.md`: Comprehensive revised implementation plan with:
+  - Current status analysis
+  - Critical path identification
+  - Detailed task breakdown for Phase 1A-1B
+  - Risk assessment and mitigation
+  - Success criteria
+  - Realistic timeline (22 weeks)
+
+**Files Updated**:
+- `.memory/cards.md`: Added entry for MVP plan review and revision
+
+**Key Insights**:
+1. **Placeholder Gap**: Many components exist but have TODOs/placeholders that need completion
+2. **GPU Integration Priority**: Highest priority - blocks all local AI functionality
+3. **Incremental Approach**: Complete kernel AI runtime first, then user-space integration
+4. **Testing Strategy**: Test incrementally at each step, not just at the end
+5. **Scope Management**: Focus on proving AI capabilities work before adding UI/data integration
+
+### Next Steps
+
+1. **Immediate**: Begin Phase 1A Week 1 - Complete CUDA integration
+2. **Parallel**: Set up test infrastructure and begin GGUF parser completion
+3. **Documentation**: Update IMPLEMENTATION_STATUS.md with revised plan
+
+### Lessons Learned
+
+- **Code Review Essential**: Need to distinguish between structure and actual implementation
+- **Placeholder Tracking**: TODOs/FIXMEs should be tracked systematically
+- **Critical Path Focus**: Identify and prioritize blocking dependencies
+- **Realistic Planning**: Account for placeholder completion time, not just structure creation
+- **Incremental Testing**: Test as you build, not just at milestones
+=======
+## Session: MVP Plan Review and Status Assessment
+**Date**: 2025-01-27
+**Session Type**: Plan Review & Status Assessment
+
+### Context Description
+
+Comprehensive review of MVP_PLAN.md to validate what has been built versus what remains to be built. Assessment of implementation status across all phases, identification of critical gaps, and creation of updated implementation plan.
+
+### Discussion Points
+
+#### Review Process
+1. **Read MVP_PLAN.md**: Reviewed original 24-week plan with 6 phases
+2. **Checked Implementation Status**: Reviewed IMPLEMENTATION_STATUS.md and codebase
+3. **Analyzed Code Structure**: Examined kernel AI components, userspace runtime, and services
+4. **Identified Placeholders**: Found 183 TODO/FIXME/placeholder markers across codebase
+5. **Assessed Completion**: Determined ~25% overall completion
+
+#### Key Findings
+
+**What's Complete:**
+- ✅ Development infrastructure (Docker, build scripts, Buildroot config)
+- ✅ Kernel AI infrastructure structure (all major components have files)
+- ✅ Userspace AI runtime structure (Rust daemon, services, engines)
+- ✅ Comprehensive documentation (architecture, implementation plans, guides)
+
+**What's Incomplete (Critical):**
+- 🔴 GPU driver integration (CUDA/OpenCL placeholders need actual implementation)
+- 🔴 Model loading (placeholders need Mistral integration)
+- 🔴 Inference execution (placeholders need actual GPU kernel launch)
+- 🔴 System calls (several ENOSYS stubs need completion)
+- 🔴 Buildroot build (config exists but not tested)
+- 🔴 Bootable VM image (not yet created)
+
+**What's Not Started:**
+- ⚪ Data integration (email, database, REST API)
+- ⚪ UI framework (rendering, AI generation, input handlers)
+- ⚪ Core applications (unified inbox, task automation)
+- ⚪ Pattern detection algorithms (structure exists, algorithms needed)
+
+#### Status Assessment
+
+**Kernel AI Infrastructure**: ~60% complete
+- Structure: ✅ Complete
+- Implementation: ⚠️ Many placeholders
+- Critical: GPU drivers, model loading, inference execution
+
+**Userspace Runtime**: ~30% complete
+- Structure: ✅ Complete
+- Implementation: ⚠️ Mostly placeholders
+- Critical: Mistral integration, kernel bridge, pattern detection
+
+**Data Integration**: ~0% complete
+- Not started
+
+**UI Framework**: ~0% complete
+- Not started
+
+**Core Applications**: ~0% complete
+- Not started
+
+**Overall MVP Progress**: ~25% complete
+
+#### Updated Plan Created
+
+Created `MVP_PLAN_UPDATED.md` with:
+- Comprehensive status assessment
+- Detailed breakdown of what's built vs. what's left
+- Revised 28-week timeline (extended from 24 weeks)
+- Prioritized implementation phases
+- Risk assessment and mitigation strategies
+- Success criteria validation
+- Next immediate actions
+
+#### Key Decisions
+
+1. **Timeline Adjustment**: Extended from 24 to 28 weeks to account for placeholder completion
+2. **Priority Focus**: Complete kernel AI implementation first (GPU drivers, model loading, inference)
+3. **Critical Path**: GPU driver integration → Model loading → Inference → Userspace integration
+4. **Risk Mitigation**: Start with CUDA (better documented), use proven libraries (llama.cpp)
+
+### Code Changes Summary
+
+**New Files Created:**
+- `MVP_PLAN_UPDATED.md`: Comprehensive updated plan with status assessment
+
+**Files Updated:**
+- `.memory/cards.md`: Added MVP plan review entry
+- `JOURNAL.md`: Added this session entry
+
+### Integration Points
+
+- **With MVP_PLAN.md**: Extends and updates original plan
+- **With IMPLEMENTATION_STATUS.md**: Validates and updates status
+- **With Kernel AI Implementation**: Identifies critical completion tasks
+- **With Userspace Runtime**: Identifies integration needs
+
+### Known Limitations / TODOs
+
+1. **GPU Driver Integration**: Needs research into kernel driver APIs
+2. **Mistral Integration**: Needs llama.cpp or similar library integration
+3. **Buildroot Testing**: Needs actual build and boot testing
+4. **Pattern Detection**: Needs algorithm implementation
+5. **System Calls**: Several syscalls need completion
+
+### Status
+
+✅ MVP Plan Review Complete
+- Comprehensive status assessment completed
+- Updated plan created with revised timeline
+- Critical path identified
+- Next actions defined
+
+### Next Steps
+
+1. **This Week**: Begin GPU driver integration (CUDA)
+2. **Next Week**: Continue GPU integration, start model loading
+3. **Week 3**: Complete inference execution
+4. **Week 4**: System calls and build integration
+5. **Week 5-6**: Mistral integration
+6. **Week 7-8**: Pattern detection algorithms
+>>>>>>> Incoming (Background Agent changes)
+
+### Context Description
+
+Captured the dependency-ordered backlog for the long-term data fabric and adaptive UI leap so downstream execution can proceed without replanning.
+
+### Discussion Points
+
+#### Task Backlog Structure
+1. Listed ten tasks from connector SDK foundations through CI/CD upgrades, each tied to explicit repo modules and deployment constraints.
+2. Embedded mandatory tests (contract, chaos, accessibility, policy) and STRIDE/PHA mitigations inside every task line item.
+3. Preserved independent module deployability by calling out CI gates and module boundaries.
+
+#### Risk & Test Considerations
+- Highlighted hazards: credential leakage, replay storms, data inference, UI hallucinations, privileged automation.
+- Documented mitigation hooks (encryption envelopes, rate limiting, approval workflows, sandbox isolation) and how telemetry feeds the feedback loop.
+
+### Code Changes Summary
+
+- **Created** `Extend-tasks.md` containing metadata, dependency ordering, hazard notes, and required tests for each task.
+- **Updated** `JOURNAL.md` with this session’s context, discussion points, and change log.
+
+## Session: Data Fabric + Adaptive Experience Implementation
+**Date**: 2025-12-11  
+**Session Type**: Feature Implementation & Integration
+
+### Context Description
+
+Implemented the first post-plan technology leap: connector SDK + event mesh, hybrid context graph memory, adaptive UI 2.0 APIs, and guarded workflow orchestration so modules can be deployed independently yet still share data over REST boundaries.
+
+### Discussion Points
+
+1. **Connector SDK & Event Mesh**
+   - Promoted `learning-engine` into a reusable crate with connector traits, schema registry, and NATS/in-memory mesh implementations.
+   - Added gRPC ingestion service (`EventIngestion`) plus filesystem replay connector and config plumbing in `aiservd`.
+   - Ensured schemas/connectors enforce privacy, rate limits, and contract validation before publishing events.
+
+2. **Context Graph & Semantic Memory**
+   - Built `ContextGraph` (graph + vector store), seeded baseline workflows, and exposed REST API through `aiservd`.
+   - Added `perf-monitor-service` context client so adaptive UI requests can enrich layouts with semantic matches.
+
+3. **Adaptive UI 2.0**
+   - Introduced layout planner, verification harness, and `/api/v1/ui/generate` endpoint that fuses planner output with context matches.
+   - Created unit tests covering planner + verification logic to keep the component allowlist and accessibility constraints intact.
+
+4. **Workflow Orchestration & Policies**
+   - Defined workflow DSL, policy engine, sandbox runner, and REST simulation endpoint that emits signed manifest IDs.
+   - Integrated policy + sandbox into `LearningEngine` for reuse by future autonomous agents.
+
+5. **Tooling & Tests**
+   - Ran `cargo fmt` across new crates and `cargo test -p perf-monitor-service` to validate UI planner/verification units.
+
+### Code Changes Summary
+
+- New `learning-engine` crate with connector SDK, schema registry, event mesh, and context graph modules; workspace wiring updated.
+- `aiservd` gained connector instantiation, ingestion gRPC server, context/workflow APIs, workflow DSL/policy/sandbox modules, and shutdown-safe orchestration.
+- `perf-monitor-service` now has a context client plus adaptive UI planner/verification modules and new REST endpoints for context + UI generation.
+- Added filesystem replay connector, schema defaults, seed data for context graph, and workflow simulation API.
+
+### Integration Points
+
+- Connector SDK pipelines feed `learning_engine::Collector` and the shared event mesh.
+- `perf-monitor-service` proxies context queries to `aiservd`, leveraging the context graph for adaptive layouts.
+- Workflow simulator APIs live alongside diagnostic routes, sharing the same HTTP server but isolated via REST endpoints.
+
+### Known Limitations / TODOs
+
+1. Production-grade connectors (email/REST/DB) still need to be implemented using the new SDK.
+2. Context graph data is in-memory only; persistence/backfill must be added.
+3. Adaptive UI planner currently heuristic-driven; RLHF/data-driven tuning plus accessibility scans should be automated later.
+4. Workflow sandbox enforces step/latency budgets but not yet resource quotas.
+
+### Status
+
+- ✅ Connector SDK + event mesh scaffolding running with gRPC ingestion + default schemas.
+- ✅ Context graph REST endpoint + proxy client live.
+- ✅ Adaptive UI 2.0 planner, verification harness, and API integrated.
+- ✅ Workflow DSL, policy engine, sandbox runner, and simulation endpoint online.
+- 🔁 Pending: production connectors, persistent semantic memory, expanded workflow regression tests.
+
+### Next Steps
+
+1. Build real connectors (IMAP, REST, DB) and attach CI contract tests.
+2. Persist context graph + embeddings to SQLite/graph store for durability.
+3. Extend adaptive UI verification to include automated accessibility + visual regression scans.
+4. Add quota modeling + richer logging to workflow sandbox/policy enforcement before allowing execution.
