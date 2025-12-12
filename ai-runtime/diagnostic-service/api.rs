@@ -4,7 +4,7 @@
 use super::{analyzer::DiagnosticAnalyzer, metrics::SystemMetrics};
 use anyhow::Result;
 use axum::{
-    extract::State,
+    extract::Extension,
     http::StatusCode,
     response::Json,
     routing::post,
@@ -33,14 +33,16 @@ pub struct DiagnosticApiState {
 }
 
 /// Create diagnostic API router
-pub fn create_router() -> Router<DiagnosticApiState> {
+pub fn create_router(state: DiagnosticApiState) -> Router {
     Router::new()
         .route("/api/v1/diagnose", post(handle_diagnostic_query))
+        // Use Extension to avoid Router<S> state generic, keeping the router serveable.
+        .layer(Extension(state))
 }
 
 /// Handle diagnostic query endpoint
 async fn handle_diagnostic_query(
-    State(state): State<DiagnosticApiState>,
+    Extension(state): Extension<DiagnosticApiState>,
     Json(request): Json<DiagnosticQuery>,
 ) -> Result<Json<DiagnosticResponse>, StatusCode> {
     // Collect current system metrics
@@ -65,14 +67,14 @@ async fn handle_diagnostic_query(
 
 /// Diagnostic API wrapper
 pub struct DiagnosticApi {
-    pub router: Router<DiagnosticApiState>,
+    pub router: Router,
 }
 
 impl DiagnosticApi {
     /// Create a new DiagnosticApi
     pub fn new(analyzer: Arc<DiagnosticAnalyzer>) -> Self {
         let state = DiagnosticApiState { analyzer };
-        let router = create_router().with_state(state);
+        let router = create_router(state);
         
         Self { router }
     }
