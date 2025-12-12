@@ -2,6 +2,11 @@
 
 ## Common Issues and Solutions
 
+### Issue: Unsafe or Ambiguous Auto-Remediation Requirements
+**Problem**: Requests for \"auto-resolve issues using AI\" can lead to unsafe designs (e.g., executing arbitrary LLM-suggested commands) and unclear scope (what issues, what actions, what approvals).
+**Solution**: Require a fully specified requirements block before coding: define data sources, detection scope, a deterministic remediation action catalog (allowlisted, parameter-validated), policy gates (suggest-only default, explicit execute enablement), authN/Z, auditing, rollback, and failure-safe behavior (LLM failure must not trigger execution).
+**Status**: In progress - requirements + STRIDE/PHA + test plan drafted before implementation
+
 ### Issue: Scope Definition Ambiguity
 **Problem**: "Operating System" can mean many things - full OS vs. application layer vs. containerized environment
 **Solution**: User chose full OS (Option A). Pragmatic approach: Start with Linux kernel base, customize extensively, build custom userland. Evolve toward fully custom kernel in future phases.

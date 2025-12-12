@@ -619,6 +619,31 @@ SYSCALL_DEFINE2(sys_get_system_metrics,
 	return 0;
 }
 
+/* Get AI Perf Stats System Call
+ * Allows user-space to query kernel AI runtime performance statistics
+ * Returns: 0 on success, negative error code on failure
+ */
+SYSCALL_DEFINE2(sys_get_ai_perf_stats,
+		void __user *, stats_buffer,
+		size_t __user *, stats_len)
+{
+	struct ai_perf_stats stats = {0};
+	int ret;
+
+	ret = ai_perf_get_stats(&stats);
+	if (ret)
+		return ret;
+
+	if (copy_to_user(stats_buffer, &stats, sizeof(stats)))
+		return -EFAULT;
+
+	if (put_user(sizeof(stats), stats_len))
+		return -EFAULT;
+
+	pr_info("BIZ_OS: sys_get_ai_perf_stats syscall completed\n");
+	return 0;
+}
+
 /* Diagnose System System Call
  * Allows user-space to request AI-powered system diagnosis
  * query: Natural language query string

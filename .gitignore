@@ -92,3 +92,4 @@ logs/
 *.pem
 *.cert
 
+.cargo/registry/

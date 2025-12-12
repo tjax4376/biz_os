@@ -1,0 +1,66 @@
+BIZ_OS Journal Entry
+
+Metadata:
+- version: 0.2 (planning + initial implementation)
+- author: GPT-5.2 (Cursor agent)
+- timestamp: 2025-12-11
+- change_rationale: Design a new AI-enabled performance monitor module based on existing ai-runtime patterns, with safe AI-assisted auto-remediation.
+
+Context Description:
+- User requested: "build an AI enabled performance monitor... use the ai-runtime as an approach... auto-resolve issues using AI"
+- Repository already contains:
+  - kernel-side AI runtime perf counters: kernel/ai-runtime/ai_perf.c (+ ai_perf_stats in ai_request.h)
+  - kernel syscall for system metrics: kernel/syscalls/ai_syscalls.c (sys_get_system_metrics)
+  - user-space diagnostic REST scaffold: ai-runtime/diagnostic-service (axum)
+
+Discussion Points / Decisions Pending:
+1) Module boundary: new independent service (preferred to meet module/REST integration principles) vs extending existing diagnostic-service.
+2) Data sources: use sys_get_system_metrics now; add sys_get_ai_perf_stats (new syscall) vs alternative exposure (procfs/debugfs).
+3) Auto-resolve safety: default suggest-only vs auto-execute with policy gating.
+4) AuthN/Z for remediation execution: loopback-only, bearer token, or mTLS.
+5) Allowed remediation action catalog and rollback requirements.
+
+Planned Outputs (no code changes yet):
+- Fully specified requirements block for perf monitor + auto-remediation
+- STRIDE/PHA threat model (focus on remediation executor)
+- Test plan (unit/integration/e2e) emphasizing safety and fail-safe behavior
+- Update .memory/cards.md with the resolved process issue: requirements-first + safety gates for auto-remediation
+
+Decisions Confirmed (User Input):
+- 1) Suggest-only: YES
+- 2) Add new syscalls: YES (sys_get_ai_perf_stats)
+- 3) In-memory only: YES
+- 4) Default auth approach: loopback + token (execution remains disabled in suggest-only)
+- 5) Default action catalog: throttle + clear-cache (planning only; execution disabled)
+
+Implementation Summary:
+- Added a new independently deployable module `ai-runtime/perf-monitor-service`:
+  - Polls system metrics + AI perf stats into an in-memory ring buffer
+  - Exposes REST endpoints:
+    - GET /healthz
+    - GET /api/v1/metrics/current
+    - GET /api/v1/ai-perf/current
+    - GET /api/v1/issues
+    - POST /api/v1/analyze
+    - POST /api/v1/remediation/plan
+    - POST /api/v1/remediation/execute (returns 403 in suggest-only)
+- Added kernel syscall `sys_get_ai_perf_stats` to expose `ai_perf_get_stats()` to user-space.
+- Added a systemd unit template for the new service.
+- Fixed diagnostic-service router state handling so the ai-runtime workspace builds cleanly.
+
+Files Changed / Added:
+- Added: ai-runtime/perf-monitor-service/Cargo.toml
+- Added: ai-runtime/perf-monitor-service/src/main.rs
+- Added: ai-runtime/perf-monitor-service/src/api.rs
+- Added: ai-runtime/perf-monitor-service/src/models.rs
+- Added: ai-runtime/perf-monitor-service/src/syscalls.rs
+- Added: ai-runtime/perf-monitor-service/src/detectors.rs
+- Updated: ai-runtime/Cargo.toml (workspace member)
+- Updated: kernel/syscalls/ai_syscalls.c (sys_get_ai_perf_stats)
+- Updated: ai-runtime/include/syscalls.h (syscall number + ai_perf_stats struct + prototype)
+- Added: system-services/perf-monitor.service
+- Updated: ai-runtime/diagnostic-service/Cargo.toml ([lib] path)
+- Updated: ai-runtime/diagnostic-service/api.rs (use Extension state to keep Router serveable)
+- Updated: ai-runtime/diagnostic-service/analyzer.rs (minor cleanup)
+- Updated: ai-runtime/aiservd/src/main.rs (serve router)
+- Updated: ai-runtime/aiservd/src/model_manager.rs (minor cleanup)

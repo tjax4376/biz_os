@@ -14,6 +14,7 @@
 #define __NR_ai_get_pattern      402
 #define __NR_sys_get_system_metrics  403
 #define __NR_sys_diagnose_system     404
+#define __NR_sys_get_ai_perf_stats   405
 
 /* AI Inference System Call
  * model_id: Model identifier
@@ -84,6 +85,63 @@ struct sys_metrics {
 long sys_get_system_metrics(
     void *metrics_buffer,
     size_t *metrics_len
+);
+
+/* AI Perf Stats Structure (mirrors kernel struct ai_perf_stats) */
+struct ai_perf_stats {
+    /* Request statistics */
+    uint64_t total_requests;
+    uint64_t completed_requests;
+    uint64_t failed_requests;
+    uint64_t cancelled_requests;
+
+    /* Latency statistics */
+    uint64_t avg_latency_ns;
+    uint64_t min_latency_ns;
+    uint64_t max_latency_ns;
+    uint64_t avg_queue_wait_ns;
+    uint64_t avg_processing_ns;
+
+    /* Throughput statistics */
+    uint64_t requests_per_second;
+    uint64_t peak_requests_per_second;
+
+    /* GPU statistics */
+    uint64_t gpu_inferences;
+    uint64_t gpu_memory_allocated;
+    uint64_t gpu_memory_used;
+    uint64_t gpu_kernel_launches;
+    uint64_t gpu_errors;
+    uint32_t gpu_utilization_percent;
+
+    /* Queue statistics */
+    uint64_t queue_depth_avg;
+    uint64_t queue_depth_max;
+
+    /* Worker statistics */
+    uint32_t worker_threads_active;
+    uint32_t worker_threads_idle;
+    uint32_t worker_load_avg;
+
+    /* Batch statistics */
+    uint64_t batches_processed;
+    uint64_t avg_batch_size;
+    uint32_t batch_efficiency_percent;
+
+    /* Cache statistics */
+    uint64_t cache_hits;
+    uint64_t cache_misses;
+    uint32_t cache_hit_rate_percent;
+};
+
+/* Get AI Perf Stats System Call
+ * stats_buffer: Buffer to receive ai_perf_stats
+ * stats_len: Pointer to buffer length (in/out)
+ * Returns: 0 on success, negative error code on failure
+ */
+long sys_get_ai_perf_stats(
+    void *stats_buffer,
+    size_t *stats_len
 );
 
 /* Diagnose System System Call

@@ -4,7 +4,6 @@
 use super::metrics::SystemMetrics;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 
 /// Diagnostic analysis result
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,7 +49,7 @@ impl DiagnosticAnalyzer {
         metrics: &SystemMetrics,
     ) -> Result<DiagnosticResult> {
         // Build prompt for Mistral LLM
-        let prompt = self.build_diagnostic_prompt(query, metrics);
+        let _prompt = self.build_diagnostic_prompt(query, metrics);
         
         // TODO: Call Mistral LLM through inference engine
         // For now, return a basic analysis based on metrics
