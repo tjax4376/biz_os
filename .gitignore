@@ -93,3 +93,4 @@ logs/
 *.cert
 
 .cargo/registry/
+node_modules/
